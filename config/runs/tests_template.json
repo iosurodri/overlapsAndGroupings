@@ -1,0 +1,5 @@
+{
+  "network": ["dense"],
+  "dataset": ["COVID"],
+  "pool": [["max"], ["mean"], ["sugeno_general"],["max", "mean"], ["max", "sugeno_general"], ["mean", "sugeno_general"]]
+}

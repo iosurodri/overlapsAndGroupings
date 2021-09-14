@@ -1,0 +1,102 @@
+{
+  "train_params": {
+    "num_epochs": 300,
+    "batch_size": 32,
+    "val": true,
+    "number_logs": 1,
+    "pin_memory": false
+  },
+  "dataset_params": {
+    "COVID": {
+      "num_classes": 4,
+      "input_size": [224, 224, 1],
+      "num_training_samples": 4058,
+      "train_proportion": 0.8,
+      "num_workers": 0,
+      "num_parts": 18
+    },
+    "COVID2": {
+      "num_classes": 2,
+      "input_size": [224, 224, 1],
+      "num_training_samples": 3691,
+      "train_proportion": 0.8,
+      "num_workers": 0
+    },
+    "COVID3": {
+      "num_classes": 2,
+      "input_size": [224, 224, 1],
+      "num_training_samples": 4067,
+      "train_proportion": 0.8,
+      "num_workers": 0,
+      "num_parts": 9
+    },
+    "COVID4": {
+      "num_classes": 2,
+      "input_size": [224, 224, 1],
+      "num_training_samples": 2379,
+      "train_proportion": 0.8,
+      "num_workers": 0,
+      "num_parts": 5
+    },
+    "COVID5": {
+      "num_classes": 2,
+      "input_size": [224, 224, 1],
+      "num_training_samples": 2064,
+      "train_proportion": 0.8,
+      "num_workers": 0,
+      "num_parts": 4
+    },
+    "COVIDGR": {
+      "num_classes": 5,
+      "input_size": [224, 224, 1],
+      "num_training_samples": 684,
+      "train_proportion": 0.8,
+      "num_workers": 0,
+      "num_parts": 5
+    },
+    "COVIDGR1": {
+      "num_classes": 2,
+      "input_size": [224, 224, 1],
+      "num_training_samples": 684,
+      "train_proportion": 0.8,
+      "num_workers": 0,
+      "num_parts": 0
+    },
+    "COVIDGR_original": {
+      "num_classes": 2,
+      "input_size": [224, 224, 1],
+      "num_training_samples": 684,
+      "train_proportion": 0.8,
+      "num_workers": 0,
+      "num_parts": 0
+    }
+  },
+  "model_params": {
+    "dense": {
+      "pool_learning_method": 0,
+      "num_epochs": 300,
+      "batch_size": 32,
+      "num_layers": 121,
+      "learning_rate": 0.001,
+      "scheduler_factor": 0.1,
+      "momentum": 0.9,
+      "optimizer": "sgd",
+      "weight_decay": 0.0001,
+      "drop_rate": 0.2,
+      "growth_rate": 32,
+      "memory_efficient": false,
+      "classifier_layers": 2
+    },
+    "resnet": {
+      "num_epochs": 10,
+      "batch_size": 8,
+      "num_layers": 50,
+      "learning_rate": 0.001,
+      "scheduler_factor": 0.1,
+      "momentum": 0.9,
+      "optimizer": "sgd",
+      "weight_decay": 0.0001,
+      "classifier_layers": 2
+    }
+  }
+}
