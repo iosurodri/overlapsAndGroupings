@@ -100,5 +100,4 @@ config/model/train.json
 
 # Debug files:
 src/debug/*
-refnet_tests/*
 *.sh
