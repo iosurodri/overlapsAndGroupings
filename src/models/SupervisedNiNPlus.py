@@ -126,14 +126,17 @@ class SupervisedNiNPlus(nn.Module):
 
 
     def forward(self, x):
-        x_supervised = []
+        if self.training:
+            x_supervised = []
         # Block 1:
         x = self.block_1_conv1(x)
         x = self.relu1(x)
-        x_supervised.append(self.block_1_supervision1(x))
+        if self.training:
+            x_supervised.append(self.block_1_supervision1(x))
         x = self.block_1_conv2(x)
         x = self.relu2(x)
-        x_supervised.append(self.block_1_supervision2(x))
+        if self.training:
+            x_supervised.append(self.block_1_supervision2(x))
         x = self.block_1_mlpconv(x)
         x = self.relu3(x)
         x = self.block_1_pool(x)
@@ -141,10 +144,12 @@ class SupervisedNiNPlus(nn.Module):
         # Block 2:
         x = self.block_2_conv1(x)
         x = self.relu4(x)
-        x_supervised.append(self.block_2_superivision1(x))
+        if self.training:
+            x_supervised.append(self.block_2_superivision1(x))
         x = self.block_2_conv2(x)
         x = self.relu5(x)
-        x_supervised.append(self.block_2_supervision2(x))
+        if self.training:
+            x_supervised.append(self.block_2_supervision2(x))
         x = self.block_2_mlpconv(x)
         x = self.relu6(x)
         x = self.block_2_pool(x)
@@ -152,14 +157,19 @@ class SupervisedNiNPlus(nn.Module):
         # Block 3:
         x = self.block_3_conv1(x)
         x = self.relu7(x)
-        x_supervised.append(self.block_3_supervision1(x))
+        if self.training:
+            x_supervised.append(self.block_3_supervision1(x))
         x = self.block_3_conv2(x)
         x = self.relu8(x)
-        x_supervised.append(self.block_3_supervision2(x))
+        if self.training:
+            x_supervised.append(self.block_3_supervision2(x))
         x = self.block_3_mlpconv1(x)
         x = self.block_3_mlpconv2(x)
         x = self.avg_pool(x)
 
         x = x.reshape([x.shape[0], x.shape[1]])
 
-        return (x, x_supervised)
+        if self.training:
+            return (x, x_supervised)
+        else:
+            return x
