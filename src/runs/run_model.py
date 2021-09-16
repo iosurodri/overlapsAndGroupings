@@ -90,6 +90,8 @@ def full_process(model_type, name=None, config_file_name='default_parameters.jso
         weight_decay = model_params['weight_decay']
         momentum = model_params['momentum']
 
+        info_data['pool_type'] = pool_type
+
     # 1. Data loading:
     if dataset == 'CIFAR10':
         train_dataloader, val_dataloader = load_dataset(dataset, batch_size, train=True,
@@ -103,7 +105,7 @@ def full_process(model_type, name=None, config_file_name='default_parameters.jso
     if model_type == 'lenet': 
         model = LeNetPlus(input_size, num_classes, pool_layer=pool_layer, use_batch_norm=use_batch_norm)
     elif model_type == 'nin':
-        model = SupervisedNiNPlus(pool_layer, in_channels=input_size[0], num_classes=num_classes, input_size=input_size[:-1])
+        model = SupervisedNiNPlus(pool_layer, in_channels=input_size[-1], num_classes=num_classes, input_size=input_size[:-1])
     else:
         raise Exception('Non implemented yet.')
     model.to(device)
@@ -135,9 +137,9 @@ def full_process(model_type, name=None, config_file_name='default_parameters.jso
     else:
         criterion = torch.nn.CrossEntropyLoss()
 
-    model = train(name, model, optimizer, criterion, train_dataloader, scheduler=scheduler, train_proportion=train_proportion,
-                  batch_size=batch_size, val_loader=val_dataloader, num_epochs=num_epochs, using_tensorboard=True,
-                  save_checkpoints=save_checkpoints)
+    model, train_loss, train_acc, val_loss, val_acc = train(name, model, optimizer, criterion, train_dataloader, scheduler=scheduler, train_proportion=train_proportion,
+                                                            batch_size=batch_size, val_loader=val_dataloader, num_epochs=num_epochs, using_tensorboard=True,
+                                                            save_checkpoints=save_checkpoints)
 
     # log_eval_results(name, val_acc, loss=val_loss)
     metrics = get_prediction_metrics(model, device, test_dataloader, verbose=False)
