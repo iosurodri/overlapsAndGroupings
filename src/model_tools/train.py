@@ -78,7 +78,10 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
             running_loss += loss.item()  # Accumulate the loss for the logging step
             # Count the number of samples correctly predicted:
             count_evaluated += inputs.shape[0]
-            count_correct += torch.sum(labels == torch.max(outputs, dim=1)[1])
+            if type(criterion) == SupervisedCrossEntropyLoss:
+                count_correct += torch.sum(labels == torch.max(outputs[0], dim=1)[1])
+            else:
+                count_correct += torch.sum(labels == torch.max(outputs, dim=1)[1])
             # If it's a logging iteration, generate log data:
             if i % iters_per_log == iters_per_log - 1:
                 model.eval()
@@ -102,10 +105,17 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
             for i_val, data_val in enumerate(val_loader, 0):
                 inputs_val, labels_val = data_val[0].to(device), data_val[1].to(device)
                 outputs_val = model(inputs_val)
-                if type(criterion) == SupervisedCrossEntropyLoss:
-                    loss = criterion(outputs_val, labels_val, epoch=epoch)
-                else:
-                    loss = criterion(outputs_val, labels_val)
+
+
+
+                DEBUG: Fix this for nin model
+
+
+
+
+
+
+                loss = criterion(outputs_val, labels_val)
                 running_loss_val += loss.item()
                 count_evaluated += inputs_val.shape[0]
                 count_correct += torch.sum(labels_val == torch.max(outputs_val, dim=1)[1])
