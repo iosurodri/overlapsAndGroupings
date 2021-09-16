@@ -13,5 +13,5 @@ class SupervisedCrossEntropyLoss(nn.Module):
         input_final, inputs_supervised = inputs
         loss = self.crossEntropyLoss(input_final, target)
         for input_supervised in inputs_supervised:
-            loss += self.crossEntropyLoss(input_supervised) * (self.alpha * 0.1 * (1 - float(epoch / self.num_epochs)))
+            loss += self.crossEntropyLoss(input_supervised, target) * (self.alpha * 0.1 * (1 - float(epoch / self.num_epochs)))
         return loss.contiguous()
