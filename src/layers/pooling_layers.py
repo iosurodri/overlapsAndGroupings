@@ -316,7 +316,6 @@ def pickPoolLayer(pool_option):
         'grouping_plus_XXX': lambda kernel_size, stride=None, padding=0, grouping='XXX': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
         'grouping_plus_XXX': lambda kernel_size, stride=None, padding=0, grouping='XXX': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
         'grouping_plus_XXX': lambda kernel_size, stride=None, padding=0, grouping='XXX': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
-        P
     }
 
     return available_options[pool_option]
