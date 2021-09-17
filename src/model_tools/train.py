@@ -105,16 +105,6 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
             for i_val, data_val in enumerate(val_loader, 0):
                 inputs_val, labels_val = data_val[0].to(device), data_val[1].to(device)
                 outputs_val = model(inputs_val)
-
-
-
-                DEBUG: Fix this for nin model
-
-
-
-
-
-
                 loss = criterion(outputs_val, labels_val)
                 running_loss_val += loss.item()
                 count_evaluated += inputs_val.shape[0]
