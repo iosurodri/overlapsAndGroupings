@@ -148,11 +148,9 @@ class GroupingPool2d(torch.nn.Module):
 class GroupingPlusPool2d(torch.nn.Module):
 
     available_groupings = {
-        'product': aggr_funcs.product_grouping,
-        'maximum': lambda x: torch.max(x)[0],
-        'minimum': aggr_funcs.minimum_grouping,
-        'ob': aggr_funcs.ob_grouping,
-        'geometric': aggr_funcs.geometric_grouping
+        'max_power': aggr_funcs.max_power_grouping,
+        'product_power': aggr_funcs.product_power_grouping,
+        'geometric_power': aggr_funcs.geometric_power_grouping
     }
 
     available_normalizations = {
@@ -162,7 +160,8 @@ class GroupingPlusPool2d(torch.nn.Module):
         }
     }
 
-    def __init__(self, kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization=None, denormalize=True, weight_mode='single'):
+    def __init__(self, kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization=None, denormalize=True, weight_mode='single',
+                 num_channels=1):
         super().__init__()
         self.kernel_size = kernel_size
         self.stride = stride if (stride is not None) else kernel_size
@@ -182,19 +181,9 @@ class GroupingPlusPool2d(torch.nn.Module):
 
         if weight_mode == 'single':
             self.weight = torch.nn.Parameter(torch.ones([1, 1, 1, 1, 1]) * 0.5)
-        # elif weight_mode == 'channel_wise':
-        #     self.weight = torch.nn.Parameter(torch.ones([1, 1, 1, ]))
-
-
-        # Parameters which model the automorphishms to apply to the 
-        if automorphism_type == 'same':
-            # self.automorphism_weight = torch.nn.Parameter(torch.rand(1, 1, 1, 1, 1))
-            self.automorphism_weight = torch.nn.Parameter(torch.ones([1, 1, 1, 1, 1]) * 0.5)
-        elif automorphism_type == 'distinct':
-            self.automorphism_weight = torch.nn.parameter(torch.rand(1, 1, 1, 1, kernel_size*kernel_size))
-        else:
-            raise Exception('Unavailable automorphism_type. Must be either "same" or "disctinct"')
-        self.transform_before = transform_before
+        elif weight_mode == 'channel_wise':
+            self.weight = torch.nn.Parameter(torch.ones([1, num_channels, 1, 1, 1]) * 0.5)
+        raise Exception('Wrong option for weight_mode provided: {}'.format(weight_mode))
         
 
     def forward(self, tensor):
@@ -208,6 +197,14 @@ class GroupingPlusPool2d(torch.nn.Module):
         # 3.-ToDo: Normalize the input so that groupings defined in (0, 1) can be properly applied:
         output_tensor, normalization_params = self.normalization(tensor)
         # If automorphisms are to be used, apply them before applying the grouping (if chosen to do so):
+        
+        # 4.-Compute reduction based on the chosen grouping:
+        output_tensor = self.grouping(output_tensor, dim=-1)
+
+        # 5.-Denormalize output values after applying grouping
+        if self.denormalize:
+            output_tensor = self.denormalization(output_tensor, normalization_params)
+        
         if self.transform_before and self.automorphism_weight is not None:
             output_tensor = torch.pow(output_tensor+0.000001, self.automorphism_weight) 
         # 4.-Compute reduction based on the chosen grouping:
@@ -215,9 +212,7 @@ class GroupingPlusPool2d(torch.nn.Module):
         # If automorphisms are to be used, apply them after applying the grouping (if chosen to do so):
         if not self.transform_before and self.automorphism_weight is not None:
             output_tensor = torch.pow(output_tensor+0.000001, self.automorphism_weight[:, 0])
-        # 5.-Denormalize output values after applying grouping
-        if self.denormalize:
-            output_tensor = self.denormalization(output_tensor, normalization_params)
+        
 
         return output_tensor
 
@@ -307,15 +302,11 @@ def pickPoolLayer(pool_option):
         'grouping_minimum': lambda kernel_size, stride=None, padding=0, grouping='minimum': defaultGrouping2d(kernel_size, stride, padding, grouping=grouping),
         'grouping_ob': lambda kernel_size, stride=None, padding=0, grouping='ob': defaultGrouping2d(kernel_size, stride, padding, grouping=grouping),
         'grouping_geometric': lambda kernel_size, stride=None, padding=0, grouping='geometric': defaultGrouping2d(kernel_size, stride, padding, grouping=grouping),
+        'grouping_u': lambda kernel_size, stride=None, padding=0, grouping='u': defaultGrouping2d(kernel_size, stride, padding, grouping=grouping),
         
-        'grouping_plus_XXX': lambda kernel_size, stride=None, padding=0, grouping='XXX': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
-        'grouping_plus_XXX': lambda kernel_size, stride=None, padding=0, grouping='XXX': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
-        'grouping_plus_XXX': lambda kernel_size, stride=None, padding=0, grouping='XXX': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
-        'grouping_plus_XXX': lambda kernel_size, stride=None, padding=0, grouping='XXX': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
-        'grouping_plus_XXX': lambda kernel_size, stride=None, padding=0, grouping='XXX': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
-        'grouping_plus_XXX': lambda kernel_size, stride=None, padding=0, grouping='XXX': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
-        'grouping_plus_XXX': lambda kernel_size, stride=None, padding=0, grouping='XXX': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
-        'grouping_plus_XXX': lambda kernel_size, stride=None, padding=0, grouping='XXX': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
+        'grouping_plus_max': lambda kernel_size, stride=None, padding=0, grouping='max_power': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
+        'grouping_plus_product': lambda kernel_size, stride=None, padding=0, grouping='product_power': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
+        'grouping_plus_geometric': lambda kernel_size, stride=None, padding=0, grouping='geometric_power': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
     }
 
     return available_options[pool_option]
