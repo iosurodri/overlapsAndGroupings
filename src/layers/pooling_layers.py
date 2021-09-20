@@ -81,10 +81,12 @@ class GroupingPool2d(torch.nn.Module):
     available_groupings = {
         'product': aggr_funcs.product_grouping,
         'minimum': aggr_funcs.minimum_grouping,
+        'maximum': lambda x, dim=-1: torch.max(x, dim=dim)[0],
         'maximum_sqrt': lambda x: torch.pow(torch.max(x)[0] + 0.000001, 0.5),
         'maximum_square': lambda x: torch.pow(torch.max(x)[0] + 0.000001, 2),
         'ob': aggr_funcs.ob_grouping,
-        'geometric': aggr_funcs.geometric_grouping
+        'geometric': aggr_funcs.geometric_grouping,
+        'u': aggr_funcs.u_grouping
     }
 
     available_normalizations = {
@@ -183,7 +185,8 @@ class GroupingPlusPool2d(torch.nn.Module):
             self.weight = torch.nn.Parameter(torch.ones([1, 1, 1, 1, 1]) * 0.5)
         elif weight_mode == 'channel_wise':
             self.weight = torch.nn.Parameter(torch.ones([1, num_channels, 1, 1, 1]) * 0.5)
-        raise Exception('Wrong option for weight_mode provided: {}'.format(weight_mode))
+        else:
+            raise Exception('Wrong option for weight_mode provided: {}'.format(weight_mode))
         
 
     def forward(self, tensor):

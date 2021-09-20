@@ -68,7 +68,7 @@ class SupervisedNiNPlus(nn.Module):
                                          kernel_size=1, stride=1, bias=True)
         self.relu3 = nn.ReLU(inplace=True)
 
-        if type(pool_layer) == nn.MaxPool2d:
+        if pool_layer in (nn.MaxPool2d, nn.AvgPool2d):
             self.block_1_pool = pool_layer(kernel_size=3, stride=2, ceil_mode=True)
         else:
             self.block_1_pool = pool_layer(kernel_size=3, stride=2, padding=block_1_pool_pad)
@@ -96,7 +96,7 @@ class SupervisedNiNPlus(nn.Module):
         self.block_2_mlpconv = nn.Conv2d(self.network_params['conv_filters'][3], self.network_params['mlpconv_neurons'][1],
                                          kernel_size=1, stride=1, bias=True)
         self.relu6 = nn.ReLU(inplace=True)
-        if type(pool_layer) == nn.MaxPool2d:
+        if pool_layer in (nn.MaxPool2d, nn.AvgPool2d):
             self.block_2_pool = pool_layer(kernel_size=3, stride=2, ceil_mode=True)
         else:
             self.block_2_pool = pool_layer(kernel_size=3, stride=2, padding=block_2_pool_pad)
