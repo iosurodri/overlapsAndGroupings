@@ -37,7 +37,7 @@ def geometric_grouping(tensor, keepdim=False, dim=-1):
 
 def u_grouping(tensor, keepdim=False, dim=-1):
     out_tensor = torch.max(tensor, keepdim=keepdim, dim=dim)[0]
-    return out_tensor / (out_tensor + torch.sqrt(1-tensor + 1e-10))
+    return out_tensor / (out_tensor + torch.pow(torch.prod(1-tensor, keepdim=keepdim, dim=dim) + 1e-10, 1/tensor.shape[dim]))
     
 #################################
 # GROUPING FUNCTIONS WITH POWER #
