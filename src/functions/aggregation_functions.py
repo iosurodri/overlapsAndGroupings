@@ -46,8 +46,8 @@ def u_grouping(tensor, keepdim=False, dim=-1):
 # Note: All values to be powered are added a value epsilon in order to avoid instabilities in the backward pass
 
 def max_power_grouping(tensor, p, keepdim=False, dim=-1):
-    out_tensor = torch.max(tensor, keepdim=keepdim, dim=dim)[0]
-    return torch.pow(out_tensor+1e-10, p)
+    out_tensor = torch.pow(tensor+1e-10, p)  # Less efficient than computing the power of the single greatest value, but more generalizable interface
+    return torch.max(out_tensor, keepdim=keepdim, dim=dim)[0]
 
 def product_power_grouping(tensor, p, keepdim=False, dim=-1):
     out_tensor = torch.pow((1 - tensor)+1e-10, p)
