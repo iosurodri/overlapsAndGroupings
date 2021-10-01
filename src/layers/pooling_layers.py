@@ -47,10 +47,10 @@ class OverlapPool2d(torch.nn.Module):
         self.dilation = dilation
         self.ceil_mode = ceil_mode
 
-        if overlap not in self.available_groupings.keys():
+        if overlap not in self.available_overlaps.keys():
             raise Exception('Overlap {} unavailable for OverlapPool2d. Must be one of {}'.format(
-                overlap, self.available_groupings.keys()))
-        self.grouping = self.available_groupings[overlap]
+                overlap, self.available_overlaps.keys()))
+        self.overlap = self.available_overlaps[overlap]
         if normalization not in self.available_normalizations.keys():
             raise Exception('Normalization {} unavailable for OverlapPool2d. Must be one of {}'.format(
                 normalization, self.available_normalizations.keys()))
@@ -237,6 +237,11 @@ def pickPoolLayer(pool_option):
         'grouping_plus_max': lambda kernel_size, stride=None, padding=0, grouping='max_power': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
         'grouping_plus_product': lambda kernel_size, stride=None, padding=0, grouping='product_power': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
         'grouping_plus_geometric': lambda kernel_size, stride=None, padding=0, grouping='geometric_power': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
+
+        'overlap_product': lambda kernel_size, stride=None, padding=0, overlap='product': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),
+        'overlap_minimum': lambda kernel_size, stride=None, padding=0, overlap='minimum': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),
+        'overlap_ob': lambda kernel_size, stride=None, padding=0, overlap='ob': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),
+        'overlap_geometric': lambda kernel_size, stride=None, padding=0, overlap='geometric': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap)
     }
 
     return available_options[pool_option]
