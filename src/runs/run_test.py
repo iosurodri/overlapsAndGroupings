@@ -45,6 +45,7 @@ def parse_args():
     CLI.add_argument("--pool_type", nargs="?", type=str, default=None, help="Functions to be used for the pooling layer.")
     CLI.add_argument("--save_checkpoints", nargs="?", type=bool, default=False, help="""Indicates whether we will save
         the best version of the model obtained during training according to val loss, as well as the final model.""")
+    CLI.add_argument("--config_file_name", nargs="?", type=str, default='default_parameters.json', help="config file to be used")
     return CLI.parse_args()
 
 
@@ -179,6 +180,7 @@ if __name__ == '__main__':
     name = args.name
     model_type = args.model_type[0]
     dataset = args.dataset
+    config_file_name = args.config_file_name
     pool_type = args.pool_type
     save_checkpoints = args.save_checkpoints
-    full_test(model_type, name=name, dataset=dataset, pool_type=pool_type, save_checkpoints=save_checkpoints)
+    full_test(model_type, name=name, dataset=dataset, pool_type=pool_type, save_checkpoints=save_checkpoints, config_file_name=config_file_name)
