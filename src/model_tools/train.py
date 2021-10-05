@@ -60,6 +60,9 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
         num_batches = ceil((num_training_samples * train_proportion) / batch_size)
         iters_per_log = floor(num_batches / logs_per_epoch)
 
+        # DEBUG:
+        torch.autograd.set_detect_anomaly(True)
+
         for i, data in enumerate(tqdm(train_loader, unit='batches', leave=False), 0):
             # Get the inputs; data is a list of [inputs, labels]
             model.train()  # Change network to training mode
