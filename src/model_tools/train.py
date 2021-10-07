@@ -8,12 +8,13 @@ from tqdm import tqdm
 from src.model_tools.save_model import save_model
 from src.visualization.visualize_distributions import visualize_heatmap, visualize_hist
 from src.functions.loss_functions import SupervisedCrossEntropyLoss
+from src.layers.pooling_layers import GroupingPlusPool2d
 
 PATH_ROOT = os.path.join('..', '..', 'reports')
 
 
 def train(name, model, optimizer, criterion, train_loader, scheduler=None, train_proportion=1, batch_size=128,
-          val_loader=None, num_epochs=20, using_tensorboard=True, save_checkpoints=False):
+          val_loader=None, num_epochs=20, using_tensorboard=True, save_checkpoints=False, log_param_dist=False):
     # 0. Prepare auxiliary functionality:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if using_tensorboard:
@@ -49,6 +50,19 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
         best_score = float('inf')
         checkpoint_delta = 0.1  # Another parameter
 
+    # First log of parameters:
+    if using_tensorboard:
+        if log_param_dist:
+            pool_idx = 0
+            for param in model.children():
+                if type(param) == GroupingPlusPool2d: 
+                    parameter = param.weight.cpu().detach().numpy().squeeze()
+                    if parameter.size == 1:
+                        writer.add_scalar('pool{}_weight'.format(pool_idx), parameter.item(), 0)
+                    else:
+                        writer.add_histogram('pool{}_weight'.format(pool_idx), parameter, 0)
+                    pool_idx += 1
+
     for epoch in tqdm(range(num_epochs), unit='epochs'):
         running_loss = 0.0
         count_evaluated = 0
@@ -59,6 +73,9 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
         # num_batches = ceil((num_training_samples * train_proportion) / batch_size)
         num_batches = ceil((num_training_samples * train_proportion) / batch_size)
         iters_per_log = floor(num_batches / logs_per_epoch)
+
+        # # DEBUG:
+        # torch.autograd.set_detect_anomaly(True)
 
         for i, data in enumerate(tqdm(train_loader, unit='batches', leave=False), 0):
             # Get the inputs; data is a list of [inputs, labels]
@@ -94,6 +111,18 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
                     info = {'loss_train': running_loss / (iters_per_log * logs_generated)}
                     for tag, value in info.items():
                         writer.add_scalar(tag, value, num_batches * epoch + (i + 1))
+                    # Log the distribution of the parameter 'p' of the layers that have it:
+                    if log_param_dist:
+                        pool_idx = 0
+                        for param in model.children():
+                            if type(param) == GroupingPlusPool2d: 
+                                parameter = param.weight.cpu().detach().numpy().squeeze()
+                                if parameter.size == 1:
+                                    writer.add_scalar('pool{}_weight'.format(pool_idx), parameter.item(), num_batches * epoch + (i + 1))
+                                else:
+                                    writer.add_histogram('pool{}_weight'.format(pool_idx), parameter, num_batches * epoch + (i + 1))
+#                                    info = {'pool{}_weight'.format(pool_idx): param.weight.cpu().valparam.weight.item()}
+                                pool_idx += 1
         # Validation phase (after each epoch, although could be changed):
         # Evaluate the results from the previous epoch:
         train_acc.append(float(count_correct) / count_evaluated)

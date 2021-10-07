@@ -45,11 +45,14 @@ def parse_args():
     CLI.add_argument("--pool_type", nargs="?", type=str, default=None, help="Functions to be used for the pooling layer.")
     CLI.add_argument("--save_checkpoints", nargs="?", type=bool, default=False, help="""Indicates whether we will save
         the best version of the model obtained during training according to val loss, as well as the final model.""")
+    CLI.add_argument("--log_param_dist", nargs="?", type=bool, default=False, help="""Indicates whether the distribution
+        of custom learnable parameters are logged (using tensorboard) or not.""")
     CLI.add_argument("--config_file_name", nargs="?", type=str, default='default_parameters.json', help="config file to be used")
     return CLI.parse_args()
 
 
-def full_test(model_type, name=None, config_file_name='default_parameters.json', dataset='CIFAR10', save_checkpoints=False, pool_type='max', num_runs=5):
+def full_test(model_type, name=None, config_file_name='default_parameters.json', dataset='CIFAR10', save_checkpoints=False, log_param_dist=False, 
+    pool_type='max', num_runs=5):
 
     # If no name is specified for referring to the current experiment, we generate one based on the date and hour:
     if name is None:
@@ -158,7 +161,7 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
 
         model, train_loss, train_acc, val_loss, val_acc = train(name, model, optimizer, criterion, train_dataloader, scheduler=scheduler, train_proportion=train_proportion,
                                                                 batch_size=batch_size, val_loader=val_dataloader, num_epochs=num_epochs, using_tensorboard=True,
-                                                                save_checkpoints=save_checkpoints)
+                                                                save_checkpoints=save_checkpoints, log_param_dist=log_param_dist)
 
         # log_eval_results(name, val_acc, loss=val_loss)
         metrics = get_prediction_metrics(model, device, test_dataloader, verbose=False)
@@ -183,4 +186,6 @@ if __name__ == '__main__':
     config_file_name = args.config_file_name
     pool_type = args.pool_type
     save_checkpoints = args.save_checkpoints
-    full_test(model_type, name=name, dataset=dataset, pool_type=pool_type, save_checkpoints=save_checkpoints, config_file_name=config_file_name)
+    log_param_dist = args.log_param_dist
+    full_test(model_type, name=name, dataset=dataset, pool_type=pool_type, save_checkpoints=save_checkpoints, config_file_name=config_file_name,
+        log_param_dist=log_param_dist)
