@@ -9,6 +9,7 @@ from src.data.save_results import log_eval_metrics
 # Trainable models:
 from src.models.LeNetPlus import LeNetPlus
 from src.models.SupervisedNiNPlus import SupervisedNiNPlus
+from src.models.DenseNetPlus import DenseNetPlus
 
 # Model interaction:
 from src.model_tools.train import train
@@ -128,6 +129,8 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             model = LeNetPlus(input_size, num_classes, pool_layer=pool_layer, use_batch_norm=use_batch_norm)
         elif model_type == 'nin':
             model = SupervisedNiNPlus(pool_layer, in_channels=input_size[-1], num_classes=num_classes, input_size=input_size[:-1])
+        elif model_type == 'dense':
+            model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes)
         else:
             raise Exception('Non implemented yet.')
         model.to(device)
