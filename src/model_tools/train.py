@@ -112,6 +112,7 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
                     for tag, value in info.items():
                         writer.add_scalar(tag, value, num_batches * epoch + (i + 1))
                     # Log the distribution of the parameter 'p' of the layers that have it:
+                    writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], num_batches * epoch + (i + 1))
                     if log_param_dist:
                         pool_idx = 0
                         for param in model.children():
@@ -123,6 +124,16 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
                                     writer.add_histogram('pool{}_weight'.format(pool_idx), parameter, num_batches * epoch + (i + 1))
 #                                    info = {'pool{}_weight'.format(pool_idx): param.weight.cpu().valparam.weight.item()}
                                 pool_idx += 1
+                    #if log_param_conv:
+                        conv_idx = 0
+                        for param in model.children():
+                            if type(param) == torch.nn.Conv2d:
+                                weight = param.weight.cpu().detach().numpy().squeeze()
+                                writer.add_histogram('conv{}_weight'.format(conv_idx), weight, num_batches * epoch + (i + 1))
+                                bias = param.bias.cpu().detach().numpy().squeeze()
+                                writer.add_histogram('conv{}_bias'.format(conv_idx), bias, num_batches * epoch + (i + 1))
+                                conv_idx += 1
+
         # Validation phase (after each epoch, although could be changed):
         # Evaluate the results from the previous epoch:
         train_acc.append(float(count_correct) / count_evaluated)
