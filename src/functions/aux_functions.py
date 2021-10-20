@@ -16,12 +16,15 @@ def min_max_normalization(tensor):
 
 
 def quantile_normalization(tensor):
-    quantile_bottom = torch.quantile(tensor, q=0.05)
-    quantile_top = torch.quantile(tensor, q=0.95)
-    normalized_tensor = tensor
-    normalized_tensor[tensor <= quantile_bottom] = 0
-    normalized_tensor[tensor >= quantile_top] = 1
-    normalized_tensor[(tensor > quantile_bottom) & (tensor < quantile_top)] = ((tensor > quantile_bottom) and (tensor < quantile_top) - quantile_bottom) / (quantile_top - quantile_bottom)
+    # Conservative normalization
+    # quantile_bottom = torch.quantile(tensor, q=0.025)
+    # quantile_top = torch.quantile(tensor, q=0.975)
+    quantile_bottom = torch.quantile(tensor, q=0.005)
+    quantile_top = torch.quantile(tensor, q=0.995)
+    normalized_tensor = torch.where(tensor < quantile_bottom, tensor.new_tensor([0]), tensor)
+    normalized_tensor = torch.where(tensor > quantile_top, tensor.new_tensor([1]), normalized_tensor)
+    normalized_tensor = torch.where((tensor >= quantile_bottom) & (tensor <= quantile_top), (tensor - quantile_bottom) / (quantile_top - quantile_bottom), normalized_tensor)
+
     normalization_params = {
         'min': quantile_bottom,
         'max': quantile_top
