@@ -44,6 +44,8 @@ def parse_args():
     CLI.add_argument("--name", nargs="?", type=str, help='Name for the generated files. If none, a name based on the '
                                                          'current date and time will be used instead')
     CLI.add_argument("--pool_type", nargs="?", type=str, default=None, help="Functions to be used for the pooling layer.")
+    CLI.add_argument("--initial_pool_exp", nargs="?", type=float, default=None, help='''If pool_type requires it, sets the 
+        initial value for the weight (exponent) ''')
     CLI.add_argument("--save_checkpoints", nargs="?", type=bool, default=False, help="""Indicates whether we will save
         the best version of the model obtained during training according to val loss, as well as the final model.""")
     CLI.add_argument("--log_param_dist", nargs="?", type=bool, default=False, help="""Indicates whether the distribution
@@ -53,7 +55,7 @@ def parse_args():
 
 
 def full_test(model_type, name=None, config_file_name='default_parameters.json', dataset='CIFAR10', save_checkpoints=False, log_param_dist=False, 
-    pool_type='max', num_runs=5):
+    pool_type='max', num_runs=5, initial_pool_exp=None):
 
     # If no name is specified for referring to the current experiment, we generate one based on the date and hour:
     if name is None:
@@ -128,7 +130,7 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
         if model_type == 'lenet': 
             model = LeNetPlus(input_size, num_classes, pool_layer=pool_layer, use_batch_norm=use_batch_norm)
         elif model_type == 'nin':
-            model = SupervisedNiNPlus(pool_layer, in_channels=input_size[-1], num_classes=num_classes, input_size=input_size[:-1])
+            model = SupervisedNiNPlus(pool_layer, in_channels=input_size[-1], num_classes=num_classes, input_size=input_size[:-1], initial_pool_exp=initial_pool_exp)
         elif model_type == 'dense':
             model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes)
         else:
@@ -188,7 +190,8 @@ if __name__ == '__main__':
     dataset = args.dataset
     config_file_name = args.config_file_name
     pool_type = args.pool_type
+    initial_pool_exp = args.initial_pool_exp
     save_checkpoints = args.save_checkpoints
     log_param_dist = args.log_param_dist
     full_test(model_type, name=name, dataset=dataset, pool_type=pool_type, save_checkpoints=save_checkpoints, config_file_name=config_file_name,
-        log_param_dist=log_param_dist)
+        log_param_dist=log_param_dist, initial_pool_exp=initial_pool_exp)

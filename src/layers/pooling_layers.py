@@ -166,13 +166,15 @@ class GroupingPlusPool2d(torch.nn.Module):
     }
 
     def __init__(self, kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization=None, denormalize=True, weight_mode='single',
-                 num_channels=1):
+                 num_channels=1, initial_pool_exp=None):
         super().__init__()
         if type(kernel_size) == int:
             kernel_size = (kernel_size, kernel_size)
         self.kernel_size = kernel_size
         if type(stride) == int:
             stride = (stride, stride)
+        if initial_pool_exp is None:
+            initial_pool_exp = 0.5
         self.stride = stride if (stride is not None) else kernel_size
         self.padding = padding
         self.dilation = dilation
@@ -189,9 +191,9 @@ class GroupingPlusPool2d(torch.nn.Module):
         self.denormalization = self.available_normalizations[normalization]['denormalization']
 
         if weight_mode == 'single':
-            self.weight = torch.nn.Parameter(torch.ones([1, 1, 1, 1, 1]) * 0.5)
+            self.weight = torch.nn.Parameter(torch.ones([1, 1, 1, 1, 1]) * initial_pool_exp)
         elif weight_mode == 'channel_wise':
-            self.weight = torch.nn.Parameter(torch.ones([1, num_channels, 1, 1, 1]) * 0.5)
+            self.weight = torch.nn.Parameter(torch.ones([1, num_channels, 1, 1, 1]) * initial_pool_exp)
         else:
             raise Exception('Wrong option for weight_mode provided: {}'.format(weight_mode))
         
@@ -218,16 +220,18 @@ class GroupingPlusPool2d(torch.nn.Module):
         return output_tensor
 
 
-def pickPoolLayer(pool_option):
+def pickPoolLayer(pool_option, initial_pool_exp=None):
     
     defaultOverlap2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, overlap=None, normalization='min_max', denormalize=True: OverlapPool2d(kernel_size, stride, padding, dilation, ceil_mode, overlap, normalization, denormalize)
     defaultGrouping2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization='min_max', denormalize=True: GroupingPool2d(kernel_size, stride, padding, dilation, ceil_mode, grouping, normalization, denormalize)
-    defaultGroupingPlus2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization='min_max', denormalize=True: GroupingPlusPool2d(kernel_size, stride, padding, dilation, ceil_mode, grouping, normalization, denormalize)
+    defaultGroupingPlus2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization='min_max', denormalize=True, initial_pool_exp=None: GroupingPlusPool2d(kernel_size, stride, padding, dilation, ceil_mode, grouping, normalization, denormalize, initial_pool_exp)
 
     available_options = {
         'max': torch.nn.MaxPool2d,
         'avg': torch.nn.AvgPool2d,
-        'grouping_product': lambda kernel_size, stride=None, padding=0, grouping='product': defaultGrouping2d(kernel_size, stride, padding, grouping=grouping),
+
+        # DEBUGGING QUANTILE_NORMALIZATION:
+        'grouping_product': lambda kernel_size, stride=None, padding=0, grouping='product': defaultGrouping2d(kernel_size, stride, padding, grouping=grouping),# , normalization='quantile'),
         'grouping_maximum': lambda kernel_size, stride=None, padding=0, grouping='maximum': defaultGrouping2d(kernel_size, stride, padding, grouping=grouping),
         'grouping_minimum': lambda kernel_size, stride=None, padding=0, grouping='minimum': defaultGrouping2d(kernel_size, stride, padding, grouping=grouping),
         'grouping_ob': lambda kernel_size, stride=None, padding=0, grouping='ob': defaultGrouping2d(kernel_size, stride, padding, grouping=grouping),
@@ -235,7 +239,8 @@ def pickPoolLayer(pool_option):
         'grouping_u': lambda kernel_size, stride=None, padding=0, grouping='u': defaultGrouping2d(kernel_size, stride, padding, grouping=grouping),
         
         'grouping_plus_max': lambda kernel_size, stride=None, padding=0, grouping='max_power': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
-        'grouping_plus_product': lambda kernel_size, stride=None, padding=0, grouping='product_power': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
+        # DEBUG: Important -> Debugging the influence of the initial exponent for the pooling layer
+        'grouping_plus_product': lambda kernel_size, stride=None, padding=0, grouping='product_power': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping, initial_pool_exp=initial_pool_exp),
         'grouping_plus_geometric': lambda kernel_size, stride=None, padding=0, grouping='geometric_power': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
 
         'overlap_product': lambda kernel_size, stride=None, padding=0, overlap='product': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),
