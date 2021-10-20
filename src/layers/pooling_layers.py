@@ -224,7 +224,7 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
     
     defaultOverlap2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, overlap=None, normalization='min_max', denormalize=True: OverlapPool2d(kernel_size, stride, padding, dilation, ceil_mode, overlap, normalization, denormalize)
     defaultGrouping2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization='min_max', denormalize=True: GroupingPool2d(kernel_size, stride, padding, dilation, ceil_mode, grouping, normalization, denormalize)
-    defaultGroupingPlus2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization='min_max', denormalize=True, initial_pool_exp=None: GroupingPlusPool2d(kernel_size, stride, padding, dilation, ceil_mode, grouping, normalization, denormalize, initial_pool_exp)
+    defaultGroupingPlus2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization='min_max', denormalize=True, initial_pool_exp=None: GroupingPlusPool2d(kernel_size, stride, padding, dilation, ceil_mode, grouping, normalization, denormalize, initial_pool_exp=initial_pool_exp)
 
     available_options = {
         'max': torch.nn.MaxPool2d,
