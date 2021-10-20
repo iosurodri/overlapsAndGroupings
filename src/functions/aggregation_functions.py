@@ -28,8 +28,8 @@ def ob_grouping(tensor, keepdim=False, dim=-1):
     return 1 - torch.sqrt(torch.min(1 - tensor, keepdim=keepdim, dim=dim)[0] * torch.prod(1 - tensor, keepdim=keepdim, dim=dim) + 1e-10)
 
 
-def ob_max_grouping(tensor, keepdim=False, dim=-1):
-    return 1 - torch.sqrt(torch.max(tensor, keepdim=keepdim, dim=dim)[0] * torch.prod(1 - tensor, keepdim=keepdim, dim=dim) + 1e-10)
+# def ob_max_grouping(tensor, keepdim=False, dim=-1):
+#     return 1 - torch.sqrt(torch.max(tensor, keepdim=keepdim, dim=dim)[0] * torch.prod(1 - tensor, keepdim=keepdim, dim=dim) + 1e-10)
 
 
 def geometric_grouping(tensor, keepdim=False, dim=-1):
