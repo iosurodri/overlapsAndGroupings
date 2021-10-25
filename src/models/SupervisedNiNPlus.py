@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch
 
 from math import ceil, floor
+import src.layers.pooling_layers as pool_layers
 
 
 # ToDO: Refactorize this layers to a separate module:
@@ -73,8 +74,11 @@ class SupervisedNiNPlus(nn.Module):
 
         if pool_layer in (nn.MaxPool2d, nn.AvgPool2d):
             self.block_1_pool = pool_layer(kernel_size=3, stride=2, ceil_mode=True)
+        # Empirical tests show that the initial value of the parameter p of GroupingPlusPool2d layers is irrelevant
+        # elif pool_layer == pool_layers.GroupingPlusPool2d:
+        #     self.block_1_pool = pool_layer(kernel_size=3, stride=2, padding=block_1_pool_pad, initial_pool_exp=initial_pool_exp)
         else:
-            self.block_1_pool = pool_layer(kernel_size=3, stride=2, padding=block_1_pool_pad, initial_pool_exp=initial_pool_exp)
+            self.block_1_pool = pool_layer(kernel_size=3, stride=2, padding=block_1_pool_pad)
 
         self.block_1_dropout = nn.Dropout2d(p=0.5, inplace=True)
 
@@ -101,8 +105,11 @@ class SupervisedNiNPlus(nn.Module):
         self.relu6 = nn.ReLU(inplace=True)
         if pool_layer in (nn.MaxPool2d, nn.AvgPool2d):
             self.block_2_pool = pool_layer(kernel_size=3, stride=2, ceil_mode=True)
+        # Empirical tests show that the initial value of the parameter p of GroupingPlusPool2d layers is irrelevant
+        # elif pool_layer == pool_layers.GroupingPlusPool2d:
+        #     self.block_2_pool = pool_layer(kernel_size=3, stride=2, padding=block_2_pool_pad, initial_pool_exp=initial_pool_exp)
         else:
-            self.block_2_pool = pool_layer(kernel_size=3, stride=2, padding=block_2_pool_pad, initial_pool_exp=initial_pool_exp)
+            self.block_2_pool = pool_layer(kernel_size=3, stride=2, padding=block_2_pool_pad)
         self.block_2_dropout = nn.Dropout2d(p=0.5, inplace=True)
         self.block_3_conv1 = nn.Conv2d(self.network_params['mlpconv_neurons'][1], self.network_params['conv_filters'][4],
                                        kernel_size=3, stride=1, padding=1)
