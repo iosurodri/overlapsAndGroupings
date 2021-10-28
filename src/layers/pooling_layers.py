@@ -174,7 +174,7 @@ class GroupingPlusPool2d(torch.nn.Module):
         if type(stride) == int:
             stride = (stride, stride)
         if initial_pool_exp is None:
-            initial_pool_exp = 0.5
+            initial_pool_exp = 0.25
         self.stride = stride if (stride is not None) else kernel_size
         self.padding = padding
         self.dilation = dilation
