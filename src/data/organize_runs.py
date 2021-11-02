@@ -13,7 +13,7 @@ def parse_args():
     return CLI.parse_args()
 
 
-def summarize_experiments(parent_folder):
+def organize_experiments(parent_folder):
 
     parent_root = os.path.join(PATH_RUNS, parent_folder)
     target_folder = os.path.join(parent_root, 'tests')
@@ -59,5 +59,5 @@ if __name__ == '__main__':
     args = parse_args()
     experiment_folder = args.experiment_folder
     print('Starting data dumping process')
-    summarize_experiments(experiment_folder[0])
+    organize_experiments(experiment_folder[0])
     print('Runs files copied')
