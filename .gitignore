@@ -119,3 +119,6 @@ src/debug/*
 # Exclude particular sample folders from restrictions:
 !/reports/results/group_of_tests
 !/reports/results/group_of_tests/**
+
+!/reports/runs/group_of_tests
+!/reports/runs/group_of_tests/**
