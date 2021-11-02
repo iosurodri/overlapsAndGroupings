@@ -44,6 +44,7 @@ def parse_args():
     CLI.add_argument("--name", nargs="?", type=str, help='Name for the generated files. If none, a name based on the '
                                                          'current date and time will be used instead')
     CLI.add_argument("--pool_type", nargs="?", type=str, default=None, help="Functions to be used for the pooling layer.")
+    CLI.add_argument("--num_runs", nargs="?", type=int, default=5, help="Number of tests to be performed. Defaults to 5.")
     CLI.add_argument("--initial_pool_exp", nargs="?", type=float, default=None, help='''If pool_type requires it, sets the 
         initial value for the weight (exponent) ''')
     CLI.add_argument("--save_checkpoints", nargs="?", type=bool, default=False, help="""Indicates whether we will save
@@ -188,10 +189,11 @@ if __name__ == '__main__':
     name = args.name
     model_type = args.model_type[0]
     dataset = args.dataset
+    num_runs = args.num_runs
     config_file_name = args.config_file_name
     pool_type = args.pool_type
     initial_pool_exp = args.initial_pool_exp
     save_checkpoints = args.save_checkpoints
     log_param_dist = args.log_param_dist
-    full_test(model_type, name=name, dataset=dataset, pool_type=pool_type, save_checkpoints=save_checkpoints, config_file_name=config_file_name,
-        log_param_dist=log_param_dist, initial_pool_exp=initial_pool_exp)
+    full_test(model_type, name=name, dataset=dataset, pool_type=pool_type, num_runs=num_runs, save_checkpoints=save_checkpoints, 
+        config_file_name=config_file_name, log_param_dist=log_param_dist, initial_pool_exp=initial_pool_exp)
