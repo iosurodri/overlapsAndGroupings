@@ -3,9 +3,9 @@
 
 * [Main use cases (EN)](#main-use-cases-en).
 * [Casos de uso principales (ES)](#casos-de-uso-principales-es)
-  * [Método de funcionamiento del script de pruebas](#funcionamiento-del-script-de-pruebas)
-  * [Generación de hojas de cálculo con resultados](#generación-de-hojas-de-calculo-con-resultados)
-  * [Organización de archivos de log para análisis mediante Tensorboard](#organización-de-archivos-de-log-para-analisis-mediante-tensorboard)
+  * [Funcionamiento del script de pruebas](#funcionamiento-del-script-de-pruebas)
+  * [Generación de hojas de cálculo con resultados](#generación-de-hojas-de-cálculo-con-resultados)
+  * [Organización de archivos de log para análisis mediante Tensorboard](#organización-de-archivos-de-log-para-análisis-mediante-tensorboard)
 
 ## Main use cases (EN)
 
