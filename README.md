@@ -3,9 +3,9 @@
 
 * [Principal use cases (EN)](#principal-use-cases-en).
 * [Usos principales (ES)](#usos-principales-es)
-  * [Método de funcionamiento del script de pruebas](#metodo-de-funcionamiento-del-script-de-pruebas)
-  * [Generación de hojas de cálculo con resultados](#generacion-de-hojas-de-calculo-con-resultados)
-  * [Organización de archivos de log para análisis mediante Tensorboard](#organizacion-de-archivos-de-log-para-analisis-mediante-tensorboard)
+  * [Método de funcionamiento del script de pruebas](#método-de-funcionamiento-del-script-de-pruebas)
+  * [Generación de hojas de cálculo con resultados](#generación-de-hojas-de-calculo-con-resultados)
+  * [Organización de archivos de log para análisis mediante Tensorboard](#organización-de-archivos-de-log-para-analisis-mediante-tensorboard)
 
 ## Principal use cases (EN)
 
@@ -50,7 +50,7 @@ Coming soon...
 		* optimizer, criterion, scheduler: Objetos que guían el proceso de aprendizaje del modelo.
 		* train_loader, val_loader: Dataloaders que cargan los datos de entrenamiento y validación, respectivamente
 		* using_tensorboard: Si es True, genera logs que posteriormente permitirán visualizar el entrenamiento usando la herramienta Tensorboard. NOTA: De aquí en adelante asumimos que es True
-		*otros
+		* otros
 	1. Se comienza consultando si se dispone de un dispositivo CUDA desde el que llevar a cabo la ejecución de las pruebas.
 	2. Se genera un archivo de log en la carpeta /reports/runs/name (donde "name" hace referencia al nombre de nuestro test) para ser leído usando la herramienta Tensorboard. Se genera un objeto SummaryWriter que será el encargado de escribir este log.
 	3. Se realiza una primera escritura de los atributos a ser guardados por el modelo mediante el objeto SummaryWriter.
