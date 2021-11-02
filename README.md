@@ -104,15 +104,15 @@ Nota: Requiere haber almacenado los logs del entrenamiento de distintos modelos 
 			/group_of_tests
 				/test_name0
 					/test0
-						test_metrics.txt
+						events.out.tfevents.XXX
 					/test1
-						test_metrics.txt
+						events.out.tfevents.XXX
 					...
 				/test_name1
 					/test0
-						test_metrics.txt
+						events.out.tfevents.XXX
 					/test1
-						test_metrics.txt
+						events.out.tfevents.XXX
 					...
 				...
 
