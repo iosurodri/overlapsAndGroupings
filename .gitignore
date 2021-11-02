@@ -78,8 +78,20 @@ target/
 # exclude data from source control by default
 /data/*
 !/data/.gitkeep
-/reports/*
-!/reports/.gitkeep
+reports/*
+!reports/.gitkeep
+
+!reports/results
+reports/results/*
+!reports/results/.gitkeep
+
+!reports/runs
+reports/runs/*
+!reports/runs/.gitkeep
+
+!reports/models
+reports/models/*
+!reports/models/.gitkeep
 
 # Mac OS-specific storage files
 .DS_Store
@@ -102,3 +114,8 @@ config/model/train.json
 # Debug files:
 src/debug/*
 *.sh
+*.sbatch
+
+# Exclude particular sample folders from restrictions:
+!/reports/results/group_of_tests
+!/reports/results/group_of_tests/**

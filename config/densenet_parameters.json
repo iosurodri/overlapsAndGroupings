@@ -22,9 +22,8 @@
         "optimizer": "sgd",
         "weight_decay": 0.0001,
         "scheduler_factor": 0.1,
-        "scheduler_min_lr": 0.00001,      
+        "scheduler_min_lr": 0.0001,      
         "use_batch_norm": true
       }
     }
   }
-  
