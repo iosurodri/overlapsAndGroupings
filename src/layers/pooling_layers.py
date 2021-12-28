@@ -46,7 +46,6 @@ class OverlapPool2d(torch.nn.Module):
         self.padding = padding
         self.dilation = dilation
         self.ceil_mode = ceil_mode
-
         if overlap not in self.available_overlaps.keys():
             raise Exception('Overlap {} unavailable for OverlapPool2d. Must be one of {}'.format(
                 overlap, self.available_overlaps.keys()))
@@ -54,7 +53,6 @@ class OverlapPool2d(torch.nn.Module):
         if normalization not in self.available_normalizations.keys():
             raise Exception('Normalization {} unavailable for OverlapPool2d. Must be one of {}'.format(
                 normalization, self.available_normalizations.keys()))
-
         self.normalization = self.available_normalizations[normalization]['normalization']
         self.denormalize = denormalize
         self.denormalization = self.available_normalizations[normalization]['denormalization']
@@ -69,12 +67,9 @@ class OverlapPool2d(torch.nn.Module):
                                  self.kernel_size[0] * self.kernel_size[1]))
         # 3.-ToDo: Normalize the input so that overlaps defined in (0, 1) can be properly applied:
         output_tensor, normalization_params = self.normalization(tensor)
-        # output_tensor = tensor
         # 4.-Compute reduction based on the chosen overlap:
         output_tensor = self.overlap(output_tensor, dim=-1)
-        # output_tensor = torch.max(output_tensor, dim=-1)[0]
-
-        # ToDo: Denormalize output values after applying overlap?
+        # 5.-Denormalize output values after applying overlap?
         if self.denormalize:
             output_tensor = self.denormalization(output_tensor, normalization_params)
         return output_tensor
@@ -396,6 +391,8 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
         'max': torch.nn.MaxPool2d,
         'avg': torch.nn.AvgPool2d,
 
+        ### GROUPINGS:
+
         # DEBUGGING QUANTILE_NORMALIZATION:
         'grouping_product': lambda kernel_size, stride=None, padding=0, grouping='product': defaultGrouping2d(kernel_size, stride, padding, grouping=grouping),# , normalization='quantile'),
         'grouping_maximum': lambda kernel_size, stride=None, padding=0, grouping='maximum': defaultGrouping2d(kernel_size, stride, padding, grouping=grouping),
@@ -418,12 +415,14 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
         'grouping_comb_prodAndOB': lambda kernel_size, stride=None, padding=0, grouping_list=['product', 'ob']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
         'grouping_comb_maxAndProd': lambda kernel_size, stride=None, padding=0, grouping_list=['maximum', 'product']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
         'grouping_comb_maxAndOB': lambda kernel_size, stride=None, padding=0, grouping_list=['maximum', 'ob']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
-        'grouping_comb_maxProdAndOB': lambda kernel_size, stride=None, padding=0, grouping_list=['maximum', 'product', 'ob']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list)
+        'grouping_comb_maxProdAndOB': lambda kernel_size, stride=None, padding=0, grouping_list=['maximum', 'product', 'ob']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
 
-        #'overlap_product': lambda kernel_size, stride=None, padding=0, overlap='product': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),
-        #'overlap_minimum': lambda kernel_size, stride=None, padding=0, overlap='minimum': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),
-        #'overlap_ob': lambda kernel_size, stride=None, padding=0, overlap='ob': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),
-        #'overlap_geometric': lambda kernel_size, stride=None, padding=0, overlap='geometric': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap)
+        ### OVERLAPS:
+
+        'overlap_product': lambda kernel_size, stride=None, padding=0, overlap='product': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),# , normalization='quantile'),
+        'overlap_minimum': lambda kernel_size, stride=None, padding=0, overlap='minimum': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),
+        'overlap_ob': lambda kernel_size, stride=None, padding=0, overlap='ob': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),
+        'overlap_geometric': lambda kernel_size, stride=None, padding=0, overlap='minimum': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),
     }
 
     return available_options[pool_option]
