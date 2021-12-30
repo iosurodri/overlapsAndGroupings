@@ -33,12 +33,20 @@ class HiddenLayerSupervision(nn.Module):
 
 class SupervisedNiNPlus(nn.Module):
 
+    activation_functions = {
+        'relu': nn.ReLU,
+        'leaky': nn.LeakyReLU,
+        'sigmoid': nn.Sigmoid,
+        'tanh': nn.Tanh,
+        'mish': nn.Mish,
+    }
+
     network_params = {
         'conv_filters': (128, 128, 192, 192, 256, 256),
         'mlpconv_neurons': (128, 192, 256)
     }
 
-    def __init__(self, pool_layer=nn.MaxPool2d, supervision_type='softmax', in_channels=3, num_classes=10, input_size=(32, 32), initial_pool_exp=None):
+    def __init__(self, pool_layer=nn.MaxPool2d, supervision_type='softmax', in_channels=3, num_classes=10, input_size=(32, 32), initial_pool_exp=None, activation='relu'):
         '''Constructor method
 
         :param pool_functions: pool functions to be used for the pooling phase. If None, MaxPool2d will be used.
@@ -58,19 +66,19 @@ class SupervisedNiNPlus(nn.Module):
         # Block 1:
         #self.relu = nn.ReLU(inplace=True);
         self.block_1_conv1 = nn.Conv2d(in_channels, self.network_params['conv_filters'][0], kernel_size=3, stride=1, padding=1)
-        self.relu1 = nn.ReLU(inplace=True)
+        # self.relu1 = nn.ReLU(inplace=True)
         self.block_1_supervision1 = HiddenLayerSupervision(
             input_size[0] * input_size[1] * self.network_params['conv_filters'][0], num_classes, classifier_name=supervision_type
         )
         self.block_1_conv2 = nn.Conv2d(self.network_params['conv_filters'][0], self.network_params['conv_filters'][1],
                                        kernel_size=3, stride=1, padding=1)
-        self.relu2 = nn.ReLU(inplace=True)
+        # self.relu2 = nn.ReLU(inplace=True)
         self.block_1_supervision2 = HiddenLayerSupervision(
             input_size[0] * input_size[1] * self.network_params['conv_filters'][1], num_classes, classifier_name=supervision_type
         )
         self.block_1_mlpconv = nn.Conv2d(self.network_params['conv_filters'][1], self.network_params['mlpconv_neurons'][0],
                                          kernel_size=1, stride=1, bias=True)
-        self.relu3 = nn.ReLU(inplace=True)
+        # self.relu3 = nn.ReLU(inplace=True)
 
         if pool_layer in (nn.MaxPool2d, nn.AvgPool2d):
             self.block_1_pool = pool_layer(kernel_size=3, stride=2, ceil_mode=True)
@@ -88,21 +96,21 @@ class SupervisedNiNPlus(nn.Module):
         # Block 2:
         self.block_2_conv1 = nn.Conv2d(self.network_params['mlpconv_neurons'][0], self.network_params['conv_filters'][2],
                                        kernel_size=3, stride=1, padding=1)
-        self.relu4 = nn.ReLU(inplace=True)
+        # self.relu4 = nn.ReLU(inplace=True)
         self.block_2_supervision1 = HiddenLayerSupervision(
             (input_size[0]//2) * (input_size[1]//2) * self.network_params['conv_filters'][2], num_classes,
             classifier_name=supervision_type
         )
         self.block_2_conv2 = nn.Conv2d(self.network_params['conv_filters'][2], self.network_params['conv_filters'][3],
                                        kernel_size=3, stride=1, padding=1)
-        self.relu5 = nn.ReLU(inplace=True)
+        # self.relu5 = nn.ReLU(inplace=True)
         self.block_2_supervision2 = HiddenLayerSupervision(
             (input_size[0]//2) * (input_size[1]//2) * self.network_params['conv_filters'][3], num_classes,
             classifier_name=supervision_type
         )
         self.block_2_mlpconv = nn.Conv2d(self.network_params['conv_filters'][3], self.network_params['mlpconv_neurons'][1],
                                          kernel_size=1, stride=1, bias=True)
-        self.relu6 = nn.ReLU(inplace=True)
+        # self.relu6 = nn.ReLU(inplace=True)
         if pool_layer in (nn.MaxPool2d, nn.AvgPool2d):
             self.block_2_pool = pool_layer(kernel_size=3, stride=2, ceil_mode=True)
         # Empirical tests show that the initial value of the parameter p of GroupingPlusPool2d layers is irrelevant
@@ -113,14 +121,14 @@ class SupervisedNiNPlus(nn.Module):
         self.block_2_dropout = nn.Dropout2d(p=0.5, inplace=True)
         self.block_3_conv1 = nn.Conv2d(self.network_params['mlpconv_neurons'][1], self.network_params['conv_filters'][4],
                                        kernel_size=3, stride=1, padding=1)
-        self.relu7 = nn.ReLU(inplace=True)
+        # self.relu7 = nn.ReLU(inplace=True)
         self.block_3_supervision1 = HiddenLayerSupervision(
             (input_size[0]//4) * (input_size[1]//4) * self.network_params['conv_filters'][4], num_classes,
             classifier_name=supervision_type
         )
         self.block_3_conv2 = nn.Conv2d(self.network_params['conv_filters'][4], self.network_params['conv_filters'][5],
                                        kernel_size=3, stride=1, padding=1)
-        self.relu8 = nn.ReLU(inplace=True)
+        # self.relu8 = nn.ReLU(inplace=True)
         self.block_3_supervision2 = HiddenLayerSupervision(
             (input_size[0]//4) * (input_size[1]//4) * self.network_params['conv_filters'][5], num_classes,
             classifier_name=supervision_type
@@ -134,43 +142,49 @@ class SupervisedNiNPlus(nn.Module):
             # if output_size is set to 1. This will make sure to compute the average of all values by channel and avoids
             # having to set the size of the output up at to this point (which may vary depending on the used dataset).
 
+        try:
+            self.activation = self.activation_functions[activation](inplace=True)
+        except TypeError:
+            self.activation = self.activation_functions[activation]()
+
 
     def forward(self, input):
         if self.training:
             x_supervised = []
         # Block 1:
         x = self.block_1_conv1(input)
-        x = self.relu1(x)
+        # x = self.relu1(x)
+        x = self.activation(x)
         if self.training:
             x_supervised.append(self.block_1_supervision1(x))
         x = self.block_1_conv2(x)
-        x = self.relu2(x)
+        x = self.activation(x)
         if self.training:
             x_supervised.append(self.block_1_supervision2(x))
         x = self.block_1_mlpconv(x)
-        x = self.relu3(x)
+        x = self.activation(x)
         x = self.block_1_pool(x)
         x = self.block_1_dropout(x).contiguous()
         # Block 2:
         x = self.block_2_conv1(x)
-        x = self.relu4(x)
+        x = self.activation(x)
         if self.training:
             x_supervised.append(self.block_2_supervision1(x))
         x = self.block_2_conv2(x)
-        x = self.relu5(x)
+        x = self.activation(x)
         if self.training:
             x_supervised.append(self.block_2_supervision2(x))
         x = self.block_2_mlpconv(x)
-        x = self.relu6(x)
+        x = self.activation(x)
         x = self.block_2_pool(x)
         x = self.block_2_dropout(x).contiguous()
         # Block 3:
         x = self.block_3_conv1(x)
-        x = self.relu7(x)
+        x = self.activation(x)
         if self.training:
             x_supervised.append(self.block_3_supervision1(x))
         x = self.block_3_conv2(x)
-        x = self.relu8(x)
+        x = self.activation(x)
         if self.training:
             x_supervised.append(self.block_3_supervision2(x))
         x = self.block_3_mlpconv1(x)
