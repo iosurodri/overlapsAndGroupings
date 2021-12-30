@@ -14,7 +14,11 @@ import src.functions.aux_functions as aux_funcs
 class OverlapPool2d(torch.nn.Module):
 
     available_overlaps = {
-        'product': torch.prod,
+        # 'product': torch.prod,
+        'product': lambda x, dim=-1, keepdim=False: torch.prod(x, keepdim=keepdim, dim=dim),
+        # TODO: SEGUIR AQUÍ
+        'product_derivative1': lambda x, dim=-1, keepdim=False: torch.prod(x, keepdim=keepdim, dim=dim) + torch.sum(x, keepdim=keepdim, dim=dim),
+        'product_derivative1_k'
         'minimum': lambda x, dim=-1, keepdim=False: torch.min(x, dim=dim, keepdim=keepdim)[0],
         'ob': aggr_funcs.ob_overlap,
         'geometric': aggr_funcs.geometric_mean
@@ -422,7 +426,7 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
         'overlap_product': lambda kernel_size, stride=None, padding=0, overlap='product': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),# , normalization='quantile'),
         'overlap_minimum': lambda kernel_size, stride=None, padding=0, overlap='minimum': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),
         'overlap_ob': lambda kernel_size, stride=None, padding=0, overlap='ob': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),
-        'overlap_geometric': lambda kernel_size, stride=None, padding=0, overlap='minimum': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),
+        'overlap_geometric': lambda kernel_size, stride=None, padding=0, overlap='geometric': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),
     }
 
     return available_options[pool_option]
