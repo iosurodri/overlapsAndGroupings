@@ -14,7 +14,7 @@ PATH_ROOT = os.path.join('..', '..', 'reports')
 
 
 def train(name, model, optimizer, criterion, train_loader, scheduler=None, train_proportion=1, batch_size=128,
-          val_loader=None, num_epochs=20, using_tensorboard=True, save_checkpoints=False, log_param_dist=False):
+          val_loader=None, num_epochs=20, using_tensorboard=True, save_checkpoints=False, log_param_dist=False, log_grad_dist=False):
     # 0. Prepare auxiliary functionality:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if using_tensorboard:
@@ -79,6 +79,7 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
         # torch.autograd.set_detect_anomaly(True)
 
         for i, data in enumerate(tqdm(train_loader, unit='batches', leave=False), 0):
+
             # Get the inputs; data is a list of [inputs, labels]
             model.train()  # Change network to training mode
             inputs, labels = data[0].to(device), data[1].to(device)
@@ -135,6 +136,17 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
                                 bias = param.bias.cpu().detach().numpy().squeeze()
                                 writer.add_histogram('conv{}_bias'.format(conv_idx), bias, num_batches * epoch + (i + 1))
                                 conv_idx += 1
+
+                    if log_grad_dist:
+                        conv_idx = 0
+                        for param in model.children():
+                            if type(param) == torch.nn.Conv2d:
+                                weight_grad = param.weight.grad.cpu().detach().numpy().squeeze()
+                                writer.add_histogram('conv{}_weight_grad'.format(conv_idx), weight_grad, num_batches * epoch + (i + 1))
+                                bias_grad = param.bias.grad.cpu().detach().numpy().squeeze()
+                                writer.add_histogram('conv{}_bias_grad'.format(conv_idx), bias_grad, num_batches * epoch + (i + 1))
+                                conv_idx += 1
+
 
         # Validation phase (after each epoch, although could be changed):
         # Evaluate the results from the previous epoch:
