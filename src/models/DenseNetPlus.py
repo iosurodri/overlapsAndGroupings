@@ -7,8 +7,11 @@ import torch.utils.checkpoint as cp
 from torch import Tensor
 from collections import OrderedDict
 
-from torchvision.models.utils import load_state_dict_from_url
-
+try:
+    from torch.hub import load_state_dict_from_url
+except:
+    from torchvision.models.utils import load_state_dict_from_url
+    
 from typing import Any, List
 
 from src.visualization.visualize_distributions import visualize_heatmap, visualize_hist
