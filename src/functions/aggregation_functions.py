@@ -59,13 +59,47 @@ def geometric_power_grouping(tensor, p, keepdim=False, dim=-1):
     out_tensor = 1 - torch.pow(torch.prod(out_tensor, keepdim=keepdim, dim=dim) + 1e-10, 1/tensor.shape[dim])  # prod(X) ** (1/n)
     return out_tensor
 
-available_functions = {
-    
-}
+####################
+# T-NORM FUNCTIONS #
+####################
+
+def lukasiewicz_tnorm(tensor, keepdim=False, dim=-1):
+    tensor_shape = list(tensor.shape)
+    tensor_shape.pop(dim)
+    out_tensor = tensor.new_zeros(tensor_shape)
+    zero = tensor.new_zeros([1])
+    if (dim == -1) or (dim == len(tensor.shape)-1):
+        out_tensor = tensor[..., 0]
+        for i in range(1, tensor.shape[dim]):
+            out_tensor = torch.maximum(out_tensor + tensor[..., i] - 1, zero)
+    else:
+        # More general implementation using index_select (when dimension is unknown)
+        out_tensor = torch.index_select(tensor, dim, tensor.new_tensor([0], dtype=torch.int)).squeeze(dim)
+        for i in range(1, tensor.shape[dim]):
+            out_tensor = torch.maximum(out_tensor + torch.index_select(tensor, dim, tensor.new_tensor([i], dtype=torch.int)).squeeze(dim) - 1, zero)
+    if keepdim:
+        torch.unsqueeze(out_tensor, dim=dim)
+    return out_tensor
 
 
-if __name__ == '__main__':
-    print(list_available_functions())
-    min_test = choose_aggregation('min')
-    sugeno_test = choose_aggregation('sugeno')
-    print('Hola')
+def hamacher_tnorm(tensor, keepdim=False, dim=-1):
+    tensor_shape = list(tensor.shape)
+    tensor_shape.pop(dim)
+    out_tensor = tensor.new_zeros(tensor_shape)
+    zeros = tensor.new_zeros(tensor_shape)
+    if (dim == -1) or (dim == len(tensor.shape)-1):
+        out_tensor = tensor[..., 0]
+        for i in range(1, tensor.shape[dim]):
+            diff_indices = torch.where(torch.abs(out_tensor - tensor[..., i]) > 1e-9)
+            prev_tensor = out_tensor
+            out_tensor = zeros
+            out_tensor[diff_indices] = torch.mul(prev_tensor[diff_indices], tensor[..., i][diff_indices]) / (
+                prev_tensor[diff_indices] + tensor[..., i][diff_indices] - torch.mul(prev_tensor[diff_indices], tensor[..., i][diff_indices]))
+    else:
+        # More general implementation using index_select (when dimension is unknown)
+        out_tensor = torch.index_select(tensor, dim, tensor.new_tensor([0], dtype=torch.int)).squeeze(dim)
+        for i in range(1, tensor.shape[dim]):
+            out_tensor = torch.maximum(out_tensor + torch.index_select(tensor, dim, tensor.new_tensor([i], dtype=torch.int)).squeeze(dim) - 1, zero)
+    if keepdim:
+        torch.unsqueeze(out_tensor, dim=dim)
+    return out_tensor
