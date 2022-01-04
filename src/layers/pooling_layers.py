@@ -386,7 +386,7 @@ class GroupingCombPool2d(torch.nn.Module):
 class TnormPool2d(torch.nn.Module):
 
     available_tnorms = {
-        'minimum': lambda x, dim=-1, keepdim=False: torch.min(x, keepdim=keepdim, dim=dim),
+        'minimum': lambda x, dim=-1, keepdim=False: torch.min(x, keepdim=keepdim, dim=dim)[0],
         'product': lambda x, dim=-1, keepdim=False: torch.prod(x, keepdim=keepdim, dim=dim),
         'lukasiewicz': aggr_funcs.lukasiewicz_tnorm,
         'hamacher': aggr_funcs.hamacher_tnorm
@@ -442,6 +442,71 @@ class TnormPool2d(torch.nn.Module):
         # 4.-Compute reduction based on the chosen tnorm:
         output_tensor = self.tnorm(output_tensor, dim=-1)
         # 5.-Denormalize output values after applying tnorm
+        if self.denormalize:
+            output_tensor = self.denormalization(output_tensor, normalization_params)
+        return output_tensor
+
+
+class TconormPool2d(torch.nn.Module):
+
+    available_tconorms = {
+        'maximum': lambda x, dim=-1, keepdim=False: torch.min(x, keepdim=keepdim, dim=dim)[0],
+        'prob_sum': aggr_funcs.probabilistic_sum,
+        'bounded_sum': aggr_funcs.bounded_sum,
+        'hamacher': aggr_funcs.hamacher_tconorm,
+        'einstein_sum': aggr_funcs.einstein_sum
+    }
+
+    available_normalizations = {
+        'min_max': {
+            'normalization': aux_funcs.min_max_normalization,
+            'denormalization': aux_funcs.min_max_denormalization
+        },
+        'quantile': {
+            'normalization': aux_funcs.quantile_normalization,
+            'denormalization': aux_funcs.min_max_denormalization
+        },
+        'sigmoid': {
+            'normalization': lambda x: (torch.sigmoid(x), None),
+            'denormalization': aux_funcs.sigmoid_denormalization
+        }
+    }
+
+    def __init__(self, kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, tconorm=None, normalization=None, denormalize=False):
+        super().__init__()
+        if type(kernel_size) == int:
+            kernel_size = (kernel_size, kernel_size)
+        self.kernel_size = kernel_size
+        if type(stride) == int:
+            stride = (stride, stride)
+        self.stride = stride if (stride is not None) else kernel_size
+        self.padding = padding
+        self.dilation = dilation
+        self.ceil_mode = ceil_mode
+        if tconorm not in self.available_tconorms.keys():
+            raise Exception('Tconorm {} unavailable for TconormPool2d. Must be one of {}'.format(
+                tconorm, self.available_tconorms.keys()))
+        self.tconorm = self.available_tconorms[tconorm]
+        if normalization not in self.available_normalizations.keys():
+            raise Exception('Normalization {} unavailable for TconormPool2d. Must be one of {}'.format(
+                normalization, self.available_normalizations.keys()))
+        self.normalization = self.available_normalizations[normalization]['normalization']
+        self.denormalize = denormalize
+        self.denormalization = self.available_normalizations[normalization]['denormalization']
+
+    def forward(self, tensor):
+        if isinstance(self.padding, list) or isinstance(self.padding, tuple):
+            tensor = F.pad(tensor, self.padding)
+        # 1.-Extract patches of kernel_size from tensor:
+        tensor = tensor.unfold(2, self.kernel_size[0], self.stride[0]).unfold(3, self.kernel_size[1], self.stride[1])
+        # 2.-Turn each one of those 2D patches into a 1D vector:
+        tensor = tensor.reshape((tensor.shape[0], tensor.shape[1], tensor.shape[2], tensor.shape[3],
+                                 self.kernel_size[0] * self.kernel_size[1]))
+        # 3.-ToDo: Normalize the input so that tconorms defined in (0, 1) can be properly applied:
+        output_tensor, normalization_params = self.normalization(tensor)
+        # 4.-Compute reduction based on the chosen tconorm:
+        output_tensor = self.tconorm(output_tensor, dim=-1)
+        # 5.-Denormalize output values after applying tconorm
         if self.denormalize:
             output_tensor = self.denormalization(output_tensor, normalization_params)
         return output_tensor
@@ -518,6 +583,7 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
     defaultGroupingComb2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping_list=None, normalization='min_max', denormalize=True, learnable=False: GroupingCombPool2d(kernel_size, stride, padding, dilation, ceil_mode, grouping_list, normalization, denormalize, learnable)
     defaultUninorm2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, uninorm=None, normalization='min_max', denormalize=True: UninormPool2d(kernel_size, stride, padding, dilation, ceil_mode, uninorm, normalization, denormalize)
     defaultTnorm2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, tnorm=None, normalization='min_max', denormalize=True: TnormPool2d(kernel_size, stride, padding, dilation, ceil_mode, tnorm, normalization, denormalize)
+    defaultTconorm2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, tconorm=None, normalization='min_max', denormalize=True: TconormPool2d(kernel_size, stride, padding, dilation, ceil_mode, tconorm, normalization, denormalize)
 
     available_options = {
         'max': torch.nn.MaxPool2d,
@@ -574,9 +640,16 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
         'uninorm_XXX': lambda kernel_size, stride=None, padding=0, uninorm='XXX': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
         'uninorm_XXX': lambda kernel_size, stride=None, padding=0, uninorm='XXX': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
 
-        ### TNORMS:
+        ### T-NORMS:
         'tnorm_lukasiewicz': lambda kernel_size, stride=None, padding=0, tnorm='lukasiewicz': defaultTnorm2d(kernel_size, stride, padding, tnorm=tnorm),
-        'tnorm_hamacher': lambda kernel_size, stride=None, padding=0, tnorm='hamacher': defaultTnorm2d(kernel_size, stride, padding, tnorm=tnorm)
+        'tnorm_hamacher': lambda kernel_size, stride=None, padding=0, tnorm='hamacher': defaultTnorm2d(kernel_size, stride, padding, tnorm=tnorm),
+
+        ### T-CONORMS
+        'tconorm_maximum': lambda kernel_size, stride=None, padding=0, tconorm='maximum': defaultTconorm2d(kernel_size, stride, padding, tconorm=tconorm),
+        'tconorm_prob_sum': lambda kernel_size, stride=None, padding=0, tconorm='prob_sum': defaultTconorm2d(kernel_size, stride, padding, tconorm=tconorm),
+        'tconorm_bounded_sum': lambda kernel_size, stride=None, padding=0, tconorm='bounded_sum': defaultTconorm2d(kernel_size, stride, padding, tconorm=tconorm),
+        'tconorm_hamacher': lambda kernel_size, stride=None, padding=0, tconorm='hamacher': defaultTconorm2d(kernel_size, stride, padding, tconorm=tconorm),
+        'tconorm_einstein_sum': lambda kernel_size, stride=None, padding=0, tconorm='einstein_sum': defaultTconorm2d(kernel_size, stride, padding, tconorm=tconorm),
     }
 
     return available_options[pool_option]

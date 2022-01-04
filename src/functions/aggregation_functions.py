@@ -81,7 +81,7 @@ def lukasiewicz_tnorm(tensor, keepdim=False, dim=-1):
         torch.unsqueeze(out_tensor, dim=dim)
     return out_tensor
 
-
+# Hamacher product:
 def hamacher_tnorm(tensor, keepdim=False, dim=-1):
     tensor_shape = list(tensor.shape)
     tensor_shape.pop(dim)
@@ -92,14 +92,104 @@ def hamacher_tnorm(tensor, keepdim=False, dim=-1):
         for i in range(1, tensor.shape[dim]):
             diff_indices = torch.where(torch.abs(out_tensor - tensor[..., i]) > 1e-9)
             prev_tensor = out_tensor
-            out_tensor = zeros
+            # if a == b -> T(a, b) = 0
+            out_tensor = zeros  
+            # otherwise -> T(a, b) = ab / (a + b + ab)
             out_tensor[diff_indices] = torch.mul(prev_tensor[diff_indices], tensor[..., i][diff_indices]) / (
                 prev_tensor[diff_indices] + tensor[..., i][diff_indices] - torch.mul(prev_tensor[diff_indices], tensor[..., i][diff_indices]))
     else:
+        # TODO: Replace this code by the implementation of hamacher t-norm
         # More general implementation using index_select (when dimension is unknown)
         out_tensor = torch.index_select(tensor, dim, tensor.new_tensor([0], dtype=torch.int)).squeeze(dim)
         for i in range(1, tensor.shape[dim]):
             out_tensor = torch.maximum(out_tensor + torch.index_select(tensor, dim, tensor.new_tensor([i], dtype=torch.int)).squeeze(dim) - 1, zero)
+    if keepdim:
+        torch.unsqueeze(out_tensor, dim=dim)
+    return out_tensor
+
+######################
+# T-CONORM FUNCTIONS #
+######################
+
+def probabilistic_sum(tensor, keepdim=False, dim=-1):
+    tensor_shape = list(tensor.shape)
+    tensor_shape.pop(dim)
+    out_tensor = tensor.new_zeros(tensor_shape)
+    if (dim == -1) or (dim == len(tensor.shape)-1):
+        out_tensor = tensor[..., 0]
+        for i in range(1, tensor.shape[dim]):
+            out_tensor = out_tensor + tensor[..., i] - torch.mul(out_tensor, tensor[..., i])
+    else:
+        # More general implementation using index_select (when dimension is unknown)
+        out_tensor = torch.index_select(tensor, dim, tensor.new_tensor([0], dtype=torch.int)).squeeze(dim)
+        for i in range(1, tensor.shape[dim]):
+            out_tensor = out_tensor + torch.index_select(tensor, dim, tensor.new_tensor([i], dtype=torch.int)).squeeze(dim) - torch.mul(
+                out_tensor, torch.index_select(tensor, dim, tensor.new_tensor([i], dtype=torch.int)).squeeze(dim))
+    if keepdim:
+        torch.unsqueeze(out_tensor, dim=dim)
+    return out_tensor
+
+# Dual to the Lukasiewicz t-norm
+def bounded_sum(tensor, keepdim=False, dim=-1):
+    tensor_shape = list(tensor.shape)
+    tensor_shape.pop(dim)
+    out_tensor = tensor.new_zeros(tensor_shape)
+    one = tensor.new_ones([1])
+    if (dim == -1) or (dim == len(tensor.shape)-1):
+        out_tensor = tensor[..., 0]
+        for i in range(1, tensor.shape[dim]):
+            out_tensor = torch.minimum(out_tensor + tensor[..., i], one)
+    else:
+        # More general implementation using index_select (when dimension is unknown)
+        out_tensor = torch.index_select(tensor, dim, tensor.new_tensor([0], dtype=torch.int)).squeeze(dim)
+        for i in range(1, tensor.shape[dim]):
+            out_tensor = torch.minimum(out_tensor, torch.index_select(tensor, dim, tensor.new_tensor([i], dtype=torch.int)).squeeze(dim), one)
+    if keepdim:
+        torch.unsqueeze(out_tensor, dim=dim)
+    return out_tensor
+
+# Dual to the hamacher product:
+def hamacher_tconorm(tensor, keepdim=False, dim=-1):
+    tensor_shape = list(tensor.shape)
+    tensor_shape.pop(dim)
+    out_tensor = tensor.new_zeros(tensor_shape)
+    ones = tensor.new_ones(tensor_shape)
+    if (dim == -1) or (dim == len(tensor.shape)-1):
+        out_tensor = tensor[..., 0]
+        for i in range(1, tensor.shape[dim]):
+            diff_indices = torch.where(torch.abs(torch.mul(out_tensor, tensor[..., i]) - 1) > 1e-9)
+            prev_tensor = out_tensor
+            # if ab == 1 -> T(a, b) = 1
+            out_tensor = ones  
+            # otherwise -> T(a, b) = (2ab - a - b) / (ab - 1)
+            out_tensor[diff_indices] = (
+                2 * torch.mul(prev_tensor[diff_indices], tensor[..., i][diff_indices]) - prev_tensor[diff_indices] - tensor[..., i][diff_indices]) / (
+                torch.mul(prev_tensor[diff_indices], tensor[..., i][diff_indices]) - 1)
+    else:
+        # TODO: Replace this code by the implementation of hamacher t-norm
+        # More general implementation using index_select (when dimension is unknown)
+        out_tensor = torch.index_select(tensor, dim, tensor.new_tensor([0], dtype=torch.int)).squeeze(dim)
+        for i in range(1, tensor.shape[dim]):
+            out_tensor = torch.maximum(out_tensor + torch.index_select(tensor, dim, tensor.new_tensor([i], dtype=torch.int)).squeeze(dim) - 1, zero)
+    if keepdim:
+        torch.unsqueeze(out_tensor, dim=dim)
+    return out_tensor
+
+# Dual to the Hamacher t-norm (p=2)
+def einstein_sum(tensor, keepdim=False, dim=-1):
+    tensor_shape = list(tensor.shape)
+    tensor_shape.pop(dim)
+    out_tensor = tensor.new_zeros(tensor_shape)
+    if (dim == -1) or (dim == len(tensor.shape)-1):
+        out_tensor = tensor[..., 0]
+        for i in range(1, tensor.shape[dim]):
+            out_tensor = (out_tensor + tensor[..., 0]) / (1 + torch.mul(out_tensor, tensor[..., 0]))
+    else:
+        # More general implementation using index_select (when dimension is unknown)
+        out_tensor = torch.index_select(tensor, dim, tensor.new_tensor([0], dtype=torch.int)).squeeze(dim)
+        for i in range(1, tensor.shape[dim]):
+            out_tensor = (out_tensor + torch.index_select(tensor, dim, tensor.new_tensor([i], dtype=torch.int)).squeeze(dim)) / (
+                1 + torch.mul(out_tensor, torch.index_select(tensor, dim, tensor.new_tensor([i], dtype=torch.int)).squeeze(dim)))
     if keepdim:
         torch.unsqueeze(out_tensor, dim=dim)
     return out_tensor
