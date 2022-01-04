@@ -515,7 +515,8 @@ class TconormPool2d(torch.nn.Module):
 class UninormPool2d(torch.nn.Module):
 
     available_uninorms = {
-        'product': lambda x, dim=-1, keepdim=False: torch.prod(x, keepdim=keepdim, dim=dim),
+        'min_max': aggr_funcs.uninorm_min_max,
+        'product': aggr_funcs.uninorm_product,
     }
 
     available_normalizations = {
@@ -547,7 +548,7 @@ class UninormPool2d(torch.nn.Module):
         if uninorm not in self.available_uninorms.keys():
             raise Exception('Uninorm {} unavailable for UninormPool2d. Must be one of {}'.format(
                 uninorm, self.available_uninorms.keys()))
-        self.uinorm = self.available_uninorms[uninorm]
+        self.uninorm = self.available_uninorms[uninorm]
         if normalization not in self.available_normalizations.keys():
             raise Exception('Normalization {} unavailable for UninormPool2d. Must be one of {}'.format(
                 normalization, self.available_normalizations.keys()))
@@ -634,8 +635,8 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
         'grouping_maximum_sigmoid': lambda kernel_size, stride=None, padding=0, grouping='maximum', normalization='sigmoid': defaultGrouping2d(kernel_size, stride, padding, grouping=grouping, normalization=normalization),
 
         ### UNINORMS:
-        'uninorm_XXX': lambda kernel_size, stride=None, padding=0, uninorm='XXX': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
-        'uninorm_XXX': lambda kernel_size, stride=None, padding=0, uninorm='XXX': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
+        'uninorm_min_max': lambda kernel_size, stride=None, padding=0, uninorm='min_max': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
+        'uninorm_product': lambda kernel_size, stride=None, padding=0, uninorm='product': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
         'uninorm_XXX': lambda kernel_size, stride=None, padding=0, uninorm='XXX': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
         'uninorm_XXX': lambda kernel_size, stride=None, padding=0, uninorm='XXX': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
         'uninorm_XXX': lambda kernel_size, stride=None, padding=0, uninorm='XXX': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
