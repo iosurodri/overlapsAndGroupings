@@ -183,7 +183,54 @@ def einstein_sum(tensor, keepdim=False, dim=-1):
     if (dim == -1) or (dim == len(tensor.shape)-1):
         out_tensor = tensor[..., 0]
         for i in range(1, tensor.shape[dim]):
-            out_tensor = (out_tensor + tensor[..., 0]) / (1 + torch.mul(out_tensor, tensor[..., 0]))
+            out_tensor = (out_tensor + tensor[..., i]) / (1 + torch.mul(out_tensor, tensor[..., i]))
+    else:
+        # More general implementation using index_select (when dimension is unknown)
+        out_tensor = torch.index_select(tensor, dim, tensor.new_tensor([0], dtype=torch.int)).squeeze(dim)
+        for i in range(1, tensor.shape[dim]):
+            out_tensor = (out_tensor + torch.index_select(tensor, dim, tensor.new_tensor([i], dtype=torch.int)).squeeze(dim)) / (
+                1 + torch.mul(out_tensor, torch.index_select(tensor, dim, tensor.new_tensor([i], dtype=torch.int)).squeeze(dim)))
+    if keepdim:
+        torch.unsqueeze(out_tensor, dim=dim)
+    return out_tensor
+
+#####################
+# UNINORM FUNCTIONS #
+#####################
+
+def uninorm_min_max(tensor, keepdim=False, dim=-1, threshold=0.5):
+    tensor_shape = list(tensor.shape)
+    tensor_shape.pop(dim)
+    out_tensor = tensor.new_zeros(tensor_shape)
+    if (dim == -1) or (dim == len(tensor.shape)-1):
+        out_tensor = tensor[..., 0]
+        for i in range(1, tensor.shape[dim]):
+            tnorm_tensor = torch.minimum(out_tensor, tensor[..., i])
+            tconorm_tensor = torch.maximum(out_tensor, tensor[..., i])
+            out_tensor = torch.where(torch.logical_or(out_tensor >= threshold, tensor[..., i] >= threshold), tconorm_tensor, tnorm_tensor)
+    else:
+        # More general implementation using index_select (when dimension is unknown)
+        out_tensor = torch.index_select(tensor, dim, tensor.new_tensor([0], dtype=torch.int)).squeeze(dim)
+        for i in range(1, tensor.shape[dim]):
+            out_tensor = (out_tensor + torch.index_select(tensor, dim, tensor.new_tensor([i], dtype=torch.int)).squeeze(dim)) / (
+                1 + torch.mul(out_tensor, torch.index_select(tensor, dim, tensor.new_tensor([i], dtype=torch.int)).squeeze(dim)))
+    if keepdim:
+        torch.unsqueeze(out_tensor, dim=dim)
+    return out_tensor
+
+def uninorm_product(tensor, keepdim=False, dim=-1, threshold=0.5):
+    tensor_shape = list(tensor.shape)
+    tensor_shape.pop(dim)
+    out_tensor = tensor.new_zeros(tensor_shape)
+    if (dim == -1) or (dim == len(tensor.shape)-1):
+        out_tensor = tensor[..., 0]
+        for i in range(1, tensor.shape[dim]):
+            tnorm_tensor = 2 * torch.multiply(out_tensor, tensor[..., i])
+            tconorm_tensor = 2 * (out_tensor + tensor[..., i] - torch.multiply(out_tensor, tensor[..., i])) - 1
+            prev_tensor = out_tensor
+            out_tensor = torch.maximum(out_tensor, tensor[..., i])
+            out_tensor = torch.where(torch.logical_and(prev_tensor <= threshold, tensor[..., i] <= threshold), tnorm_tensor, out_tensor)
+            out_tensor = torch.where(torch.logical_and(prev_tensor >= threshold, tensor[..., i] >= threshold), tconorm_tensor, out_tensor)
     else:
         # More general implementation using index_select (when dimension is unknown)
         out_tensor = torch.index_select(tensor, dim, tensor.new_tensor([0], dtype=torch.int)).squeeze(dim)
