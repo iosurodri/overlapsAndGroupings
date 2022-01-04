@@ -517,6 +517,7 @@ class UninormPool2d(torch.nn.Module):
     available_uninorms = {
         'min_max': aggr_funcs.uninorm_min_max,
         'product': aggr_funcs.uninorm_product,
+        'lukasiewicz': aggr_funcs.uninorm_lukasiewicz,
     }
 
     available_normalizations = {
@@ -637,7 +638,7 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
         ### UNINORMS:
         'uninorm_min_max': lambda kernel_size, stride=None, padding=0, uninorm='min_max': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
         'uninorm_product': lambda kernel_size, stride=None, padding=0, uninorm='product': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
-        'uninorm_XXX': lambda kernel_size, stride=None, padding=0, uninorm='XXX': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
+        'uninorm_lukasiewicz': lambda kernel_size, stride=None, padding=0, uninorm='lukasiewicz': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
         'uninorm_XXX': lambda kernel_size, stride=None, padding=0, uninorm='XXX': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
         'uninorm_XXX': lambda kernel_size, stride=None, padding=0, uninorm='XXX': defaultUninorm2d(kernel_size, stride, padding, uninorm=uninorm),
 
