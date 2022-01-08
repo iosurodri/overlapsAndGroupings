@@ -32,6 +32,18 @@ def quantile_normalization(tensor):
     return normalized_tensor, normalization_params
 
 
+def linearAb2minusOneOne(tensor):
+    min_value = tensor.min()
+    max_value = tensor.max()
+    normalized_tensor = ((2 / (max_value - min_value)) * tensor) - ((min_value + max_value) / (max_value - min_value))
+
+    normalization_params = {
+        'min': min_value,
+        'max': max_value
+    }
+    return normalized_tensor, normalization_params
+
+
 #########################
 # Denormalization methods #
 #########################
@@ -53,3 +65,9 @@ if __name__ == '__main__':
     test = torch.symeig(covariance_matrix, eigenvectors=True)
     print(covariance_matrix.shape)
 
+
+def linearMinusOneOne2ab(tensor, normalization_params):
+    min_value = normalization_params['min']
+    max_value = normalization_params['max']
+    denormalized_tensor = 0.5 * ((max_value - min_value) * tensor + min_value + max_value)
+    return denormalized_tensor
