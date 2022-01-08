@@ -275,8 +275,8 @@ def basic_moderate_deviation(tensor, keepdim=False, dim=-1, m=2):
     out_tensor = torch.sum(torch.pow(m, tensor), keepdim=keepdim, dim=dim) / num_values
     if m == 'e':
         out_tensor = torch.log(out_tensor)
-    elif (m - 2) < 1e-9:
+    elif abs(m - 2) < 1e-9:
         out_tensor = torch.log2(out_tensor)
     else:
-        out_tensor = torch.log2(out_tensor) / torch.log2(2)
+        out_tensor = torch.log2(out_tensor) / torch.log2(tensor.new_ones([1]) * m)
     return out_tensor
