@@ -133,8 +133,9 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
                             if type(param) == torch.nn.Conv2d:
                                 weight = param.weight.cpu().detach().numpy().squeeze()
                                 writer.add_histogram('conv{}_weight'.format(conv_idx), weight, num_batches * epoch + (i + 1))
-                                bias = param.bias.cpu().detach().numpy().squeeze()
-                                writer.add_histogram('conv{}_bias'.format(conv_idx), bias, num_batches * epoch + (i + 1))
+                                if param.bias is not None:
+                                    bias = param.bias.cpu().detach().numpy().squeeze()
+                                    writer.add_histogram('conv{}_bias'.format(conv_idx), bias, num_batches * epoch + (i + 1))
                                 conv_idx += 1
 
                     if log_grad_dist:
@@ -143,8 +144,9 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
                             if type(param) == torch.nn.Conv2d:
                                 weight_grad = param.weight.grad.cpu().detach().numpy().squeeze()
                                 writer.add_histogram('conv{}_weight_grad'.format(conv_idx), weight_grad, num_batches * epoch + (i + 1))
-                                bias_grad = param.bias.grad.cpu().detach().numpy().squeeze()
-                                writer.add_histogram('conv{}_bias_grad'.format(conv_idx), bias_grad, num_batches * epoch + (i + 1))
+                                if param.bias is not None:
+                                    bias_grad = param.bias.grad.cpu().detach().numpy().squeeze()
+                                    writer.add_histogram('conv{}_bias_grad'.format(conv_idx), bias_grad, num_batches * epoch + (i + 1))
                                 conv_idx += 1
 
 
