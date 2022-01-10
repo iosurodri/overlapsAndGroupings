@@ -577,18 +577,12 @@ class UninormPool2d(torch.nn.Module):
 
 class MDPool2d(torch.nn.Module):
 
-    def debugMDPool2d():
-        input = torch.tensor([1, 2, 3, 4, 6, 8, 9])
-        normalized_input, normalization_params = aux_funcs.linearAb2minusOneOne(input)
-        normalized_output = aggr_funcs.basic_moderate_deviation(normalized_input, m=2)
-        output = aux_funcs.linearMinusOneOne2ab(normalized_output, normalization_params)
-        print(output)
-
-    debugMDPool2d()
-        
 
     available_deviations = {
         'test': lambda x, keepdim=False, dim=-1: aggr_funcs.basic_moderate_deviation(x, keepdim=keepdim, dim=dim, m=2),
+        'm1_5': lambda x, keepdim=False, dim=-1: aggr_funcs.basic_moderate_deviation(x, keepdim=keepdim, dim=dim, m=1.5),
+        'm2_5': lambda x, keepdim=False, dim=-1: aggr_funcs.basic_moderate_deviation(x, keepdim=keepdim, dim=dim, m=2.5),
+        'm3': lambda x, keepdim=False, dim=-1: aggr_funcs.basic_moderate_deviation(x, keepdim=keepdim, dim=dim, m=2.5),
     }
 
     available_normalizations = {
@@ -725,6 +719,9 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
 
         ### MODERATE-DEVIATIONS
         'moderate_deviation': lambda kernel_size, stride=None, padding=0, deviation='test': defaultMD2d(kernel_size, stride, padding, deviation=deviation),
+        'moderate_deviation_1_5': lambda kernel_size, stride=None, padding=0, deviation='m1_5': defaultMD2d(kernel_size, stride, padding, deviation=deviation),
+        'moderate_deviation_2_5': lambda kernel_size, stride=None, padding=0, deviation='m2_5': defaultMD2d(kernel_size, stride, padding, deviation=deviation),
+        'moderate_deviation_3': lambda kernel_size, stride=None, padding=0, deviation='m3': defaultMD2d(kernel_size, stride, padding, deviation=deviation),
     }
 
     return available_options[pool_option]

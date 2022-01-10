@@ -265,3 +265,18 @@ def uninorm_lukasiewicz(tensor, keepdim=False, dim=-1, threshold=0.5):
     if keepdim:
         torch.unsqueeze(out_tensor, dim=dim)
     return out_tensor
+
+#####################
+# UNINORM FUNCTIONS #
+#####################
+
+def basic_moderate_deviation(tensor, keepdim=False, dim=-1, m=2):
+    num_values = tensor.shape[dim]
+    out_tensor = torch.sum(torch.pow(m, tensor), keepdim=keepdim, dim=dim) / num_values
+    if m == 'e':
+        out_tensor = torch.log(out_tensor)
+    elif abs(m - 2) < 1e-9:
+        out_tensor = torch.log2(out_tensor)
+    else:
+        out_tensor = torch.log2(out_tensor) / torch.log2(tensor.new_ones([1]) * m)
+    return out_tensor

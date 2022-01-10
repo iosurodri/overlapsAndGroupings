@@ -38,7 +38,7 @@ class SupervisedNiNPlus(nn.Module):
         'leaky': nn.LeakyReLU,
         'sigmoid': nn.Sigmoid,
         'tanh': nn.Tanh,
-        'mish': nn.Mish,
+        # 'mish': nn.Mish,
     }
 
     network_params = {
