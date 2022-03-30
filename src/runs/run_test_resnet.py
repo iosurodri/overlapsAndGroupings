@@ -59,7 +59,7 @@ def parse_args():
 
 
 def full_test(model_type, name=None, config_file_name='default_parameters.json', dataset='CIFAR10', save_checkpoints=False, log_param_dist=False, 
-    log_grad_dist=False, pool_type='max', bottleneck='pad_constant', planes='double', model_size=20, num_runs=5, initial_pool_exp=None):
+    log_grad_dist=False, pool_type=None, bottleneck='pad_constant', planes='double', model_size=20, num_runs=5, initial_pool_exp=None):
 
     # If no name is specified for referring to the current experiment, we generate one based on the date and hour:
     if name is None:
@@ -131,7 +131,9 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             test_dataloader = load_dataset(dataset, batch_size, train=False, num_workers=num_workers)
 
         # 2. Model initialization:
-        pool_layer = pickPoolLayer(pool_type)
+        pool_layer = None
+        if pool_type is not None:
+            pool_layer = pickPoolLayer(pool_type)
 
         # TODO: Replace models available by RESNet types:
 
