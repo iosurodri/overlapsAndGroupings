@@ -12,7 +12,7 @@
             "input_size": [32, 32, 3],
             "num_training_samples": 50000,
             "train_proportion": 0.8,
-            "num_workers": 0
+            "num_workers": 2
         }
     },
     "model_params": {
