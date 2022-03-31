@@ -1,6 +1,6 @@
 {
     "train_params": {
-        "num_epochs": 30,
+        "num_epochs": 100,
         "batch_size": 128,
         "val": true,
         "number_logs": 1,
@@ -16,7 +16,7 @@
         }
     },
     "model_params": {
-        "learning_rate": 0.001,
+        "learning_rate": 0.1,
         "momentum": 0.9,
         "optimizer": "sgd",
         "weight_decay": 0.0001,
