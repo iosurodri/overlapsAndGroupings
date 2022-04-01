@@ -37,7 +37,7 @@ def parse_args():
     CLI.add_argument("model_type", nargs=1, type=str, choices=['small', 'pool'], help='Type of RESNet model to run.')
     CLI.add_argument("--bottleneck", nargs="?", type=str, choices=['pad_constant', 'pad_replicate', 'conv_bottleneck'])
     CLI.add_argument("--planes", nargs="?", type=str, choices=['double', 'constant_16', 'constant_32'])
-    CLI.add_argument("--model_size", nargs="?", type=int, default=20)
+    CLI.add_argument("--model_size", nargs="?", type=int, choices=[20, 32, 56], default=20)
 
     CLI.add_argument("--dataset", nargs="?", type=str, default="CIFAR10", help='Dataset to be used for training. Options'
                                                                                'are "CIFAR10" for CIFAR10 dataset; '
@@ -158,8 +158,9 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
                 'Compatibility with the given optimizer has not been implemented yet')
 
         # Scheduler: On plateau
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=scheduler_factor, patience=5, threshold=0.0001, cooldown=0,
-                                                        min_lr=scheduler_min_lr)
+        # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=scheduler_factor, patience=5, threshold=0.0001, cooldown=0,
+        #                                                 min_lr=scheduler_min_lr)
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
         # Set the loss function:
         criterion = torch.nn.CrossEntropyLoss()
