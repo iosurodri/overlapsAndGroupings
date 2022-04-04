@@ -55,11 +55,13 @@ def parse_args():
     CLI.add_argument("--log_grad_dist", nargs="?", type=bool, default=False, help="""Indicates whether the distribution of 
         gradients for convolutional layers are logged (using tensorboard) or not.""")
     CLI.add_argument("--config_file_name", nargs="?", type=str, default='default_parameters.json', help="config file to be used")
+    CLI.add_argument("--learning_rate", nargs="?", type=float, default=None)
     return CLI.parse_args()
 
 
 def full_test(model_type, name=None, config_file_name='default_parameters.json', dataset='CIFAR10', save_checkpoints=False, log_param_dist=False, 
-    log_grad_dist=False, pool_type=None, bottleneck='pad_constant', planes='double', model_size=20, num_runs=5, initial_pool_exp=None):
+    log_grad_dist=False, pool_type=None, bottleneck='pad_constant', planes='double', model_size=20, num_runs=5, initial_pool_exp=None,
+    learning_rate=None):
 
     # If no name is specified for referring to the current experiment, we generate one based on the date and hour:
     if name is None:
@@ -94,7 +96,8 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
         scheduler_factor = model_params['scheduler_factor']
         scheduler_min_lr = model_params['scheduler_min_lr']
         optimizer_name = model_params['optimizer']
-        learning_rate = model_params['learning_rate']
+        if learning_rate is None:
+            learning_rate = model_params['learning_rate']
         weight_decay = model_params['weight_decay']
         momentum = model_params['momentum']
 
@@ -200,6 +203,9 @@ if __name__ == '__main__':
     save_checkpoints = args.save_checkpoints
     log_param_dist = args.log_param_dist
     log_grad_dist = args.log_grad_dist
+
+    learning_rate = args.learning_rate
     full_test(model_type, name=name, dataset=dataset, bottleneck=bottleneck, planes=planes, model_size=model_size, 
         pool_type=pool_type, num_runs=num_runs, save_checkpoints=save_checkpoints, config_file_name=config_file_name, 
-        log_param_dist=log_param_dist, log_grad_dist=log_grad_dist, initial_pool_exp=initial_pool_exp)
+        log_param_dist=log_param_dist, log_grad_dist=log_grad_dist, initial_pool_exp=initial_pool_exp,
+        learning_rate=learning_rate)
