@@ -670,7 +670,7 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
         'grouping_plus_max': lambda kernel_size, stride=None, padding=0, grouping='max_power': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
         # DEBUG: Important -> Debugging the influence of the initial exponent for the pooling layer
         'grouping_plus_product': lambda kernel_size, stride=None, padding=0, grouping='product_power', initial_pool_exp=initial_pool_exp: defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping, initial_pool_exp=initial_pool_exp),
-        # NEW: s
+        # NEW:
         'grouping_plus_geometric': lambda kernel_size, stride=None, padding=0, grouping='geometric_power': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
 
         'grouping_comp_max_prodAndOB': lambda kernel_size, stride=None, padding=0, grouping_big='maximum', grouping_list=['product', 'ob']: defaultGroupingComposition2d(kernel_size, stride, padding, grouping_big=grouping_big, grouping_list=grouping_list),
