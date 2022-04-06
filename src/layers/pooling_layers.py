@@ -172,8 +172,10 @@ class GroupingPlusPool2d(torch.nn.Module):
         self.kernel_size = kernel_size
         if type(stride) == int:
             stride = (stride, stride)
+        # DEBUG: removing parameter initial_pool_exp:
         if initial_pool_exp is None:
-            initial_pool_exp = 0.25
+            initial_pool_exp = 1.0
+        
         self.stride = stride if (stride is not None) else kernel_size
         self.padding = padding
         self.dilation = dilation
@@ -668,6 +670,7 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
         'grouping_plus_max': lambda kernel_size, stride=None, padding=0, grouping='max_power': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
         # DEBUG: Important -> Debugging the influence of the initial exponent for the pooling layer
         'grouping_plus_product': lambda kernel_size, stride=None, padding=0, grouping='product_power', initial_pool_exp=initial_pool_exp: defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping, initial_pool_exp=initial_pool_exp),
+        # NEW: s
         'grouping_plus_geometric': lambda kernel_size, stride=None, padding=0, grouping='geometric_power': defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping),
 
         'grouping_comp_max_prodAndOB': lambda kernel_size, stride=None, padding=0, grouping_big='maximum', grouping_list=['product', 'ob']: defaultGroupingComposition2d(kernel_size, stride, padding, grouping_big=grouping_big, grouping_list=grouping_list),
@@ -680,6 +683,8 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
         'grouping_comb_maxAndProd': lambda kernel_size, stride=None, padding=0, grouping_list=['maximum', 'product']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
         'grouping_comb_maxAndOB': lambda kernel_size, stride=None, padding=0, grouping_list=['maximum', 'ob']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
         'grouping_comb_maxProdAndOB': lambda kernel_size, stride=None, padding=0, grouping_list=['maximum', 'product', 'ob']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
+        # NEW:
+        'grouping_comb_maxAndGeometric': lambda kernel_size, stride=None, padding=0, grouping_list=['maximum', 'geometric']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
 
         ### OVERLAPS:
 
