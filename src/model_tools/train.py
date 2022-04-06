@@ -118,7 +118,7 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
                     writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], num_batches * epoch + (i + 1))
                     if log_param_dist:
                         pool_idx = 0
-                        for param in model.children():
+                        for param in model.modules():
                             if type(param) in (GroupingPlusPool2d, GroupingCombPool2d): 
                                 if param.weight is not None:
                                     parameter = param.weight.cpu().detach().numpy().squeeze()
@@ -130,7 +130,7 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
                                 pool_idx += 1
                     #if log_param_conv:
                         conv_idx = 0
-                        for param in model.children():
+                        for param in model.modules():
                             if type(param) == torch.nn.Conv2d:
                                 weight = param.weight.cpu().detach().numpy().squeeze()
                                 writer.add_histogram('conv{}_weight'.format(conv_idx), weight, num_batches * epoch + (i + 1))
@@ -141,7 +141,7 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
 
                     if log_grad_dist:
                         conv_idx = 0
-                        for param in model.children():
+                        for param in model.modules():
                             if type(param) == torch.nn.Conv2d:
                                 weight_grad = param.weight.grad.cpu().detach().numpy().squeeze()
                                 writer.add_histogram('conv{}_weight_grad'.format(conv_idx), weight_grad, num_batches * epoch + (i + 1))
