@@ -6,6 +6,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from math import ceil, floor
 
 from tqdm import tqdm
+from src.data.log_generation import log_distributions
 from src.model_tools.save_model import save_model
 from src.visualization.visualize_distributions import visualize_heatmap, visualize_hist
 from src.functions.loss_functions import SupervisedCrossEntropyLoss
@@ -15,7 +16,8 @@ PATH_ROOT = os.path.join('..', '..', 'reports')
 
 
 def train(name, model, optimizer, criterion, train_loader, scheduler=None, train_proportion=1, batch_size=128,
-          val_loader=None, num_epochs=20, using_tensorboard=True, save_checkpoints=False, log_param_dist=False, log_grad_dist=False):
+          val_loader=None, num_epochs=20, using_tensorboard=True, save_checkpoints=False, log_param_dist=False, log_grad_dist=False,
+          log_first_epoch=True):
     # 0. Prepare auxiliary functionality:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if using_tensorboard:
@@ -72,7 +74,6 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
         logs_generated = 0
 
         num_training_samples = len(train_loader.dataset)
-        # num_batches = ceil((num_training_samples * train_proportion) / batch_size)
         num_batches = ceil((num_training_samples * train_proportion) / batch_size)
         iters_per_log = floor(num_batches / logs_per_epoch)
 
@@ -102,6 +103,13 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
                 count_correct += torch.sum(labels == torch.max(outputs[0], dim=1)[1])
             else:
                 count_correct += torch.sum(labels == torch.max(outputs, dim=1)[1])
+            
+            # Useful for debugging early vanishing or exploding gradient problems:
+            if log_first_epoch:
+                log_distributions(model, writer, iter_number=num_batches * epoch + (i + 1), 
+                        log_custom_param_dist=log_param_dist, log_conv_dist=log_param_dist, log_grad_dist=log_grad_dist, 
+                        custom_modules=[GroupingPlusPool2d, GroupingCombPool2d], custom_module_name='pool')
+
             # If it's a logging iteration, generate log data:
             if i % iters_per_log == iters_per_log - 1:
                 model.eval()
@@ -114,42 +122,14 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
                     info = {'loss_train': running_loss / (iters_per_log * logs_generated)}
                     for tag, value in info.items():
                         writer.add_scalar(tag, value, num_batches * epoch + (i + 1))
-                    # Log the distribution of the parameter 'p' of the layers that have it:
+                    # Log the value of the learning rate in this iteration:
                     writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], num_batches * epoch + (i + 1))
-                    if log_param_dist:
-                        pool_idx = 0
-                        for param in model.modules():
-                            if type(param) in (GroupingPlusPool2d, GroupingCombPool2d): 
-                                if param.weight is not None:
-                                    parameter = param.weight.cpu().detach().numpy().squeeze()
-                                    if parameter.size == 1:
-                                        writer.add_scalar('pool{}_weight'.format(pool_idx), parameter.item(), num_batches * epoch + (i + 1))
-                                    else:
-                                        writer.add_histogram('pool{}_weight'.format(pool_idx), parameter, num_batches * epoch + (i + 1))
-    #                                    info = {'pool{}_weight'.format(pool_idx): param.weight.cpu().valparam.weight.item()}
-                                pool_idx += 1
-                    #if log_param_conv:
-                        conv_idx = 0
-                        for param in model.modules():
-                            if type(param) == torch.nn.Conv2d:
-                                weight = param.weight.cpu().detach().numpy().squeeze()
-                                writer.add_histogram('conv{}_weight'.format(conv_idx), weight, num_batches * epoch + (i + 1))
-                                if param.bias is not None:
-                                    bias = param.bias.cpu().detach().numpy().squeeze()
-                                    writer.add_histogram('conv{}_bias'.format(conv_idx), bias, num_batches * epoch + (i + 1))
-                                conv_idx += 1
+                    # Log the distributions of the parameters of the model:
+                    log_distributions(model, writer, iter_number=num_batches * epoch + (i + 1), 
+                        log_custom_param_dist=log_param_dist, log_conv_dist=log_param_dist, log_grad_dist=log_grad_dist, 
+                        custom_modules=[GroupingPlusPool2d, GroupingCombPool2d], custom_module_name='pool')
 
-                    if log_grad_dist:
-                        conv_idx = 0
-                        for param in model.modules():
-                            if type(param) == torch.nn.Conv2d:
-                                weight_grad = param.weight.grad.cpu().detach().numpy().squeeze()
-                                writer.add_histogram('conv{}_weight_grad'.format(conv_idx), weight_grad, num_batches * epoch + (i + 1))
-                                if param.bias is not None:
-                                    bias_grad = param.bias.grad.cpu().detach().numpy().squeeze()
-                                    writer.add_histogram('conv{}_bias_grad'.format(conv_idx), bias_grad, num_batches * epoch + (i + 1))
-                                conv_idx += 1
-
+        log_first_epoch = False  # Ensure that logging after each batch will only occur on first epoch
 
         # Validation phase (after each epoch, although could be changed):
         # Evaluate the results from the previous epoch:
