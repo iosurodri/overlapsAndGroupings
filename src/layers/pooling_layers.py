@@ -200,6 +200,10 @@ class GroupingPlusPool2d(torch.nn.Module):
         
 
     def forward(self, tensor):
+
+        # DEBUG: Requirement for p > 0
+        square_weight = self.weight * self.weight
+
         if isinstance(self.padding, list) or isinstance(self.padding, tuple):
             tensor = F.pad(tensor, self.padding)
         # 1.-Extract patches of kernel_size from tensor:
@@ -212,7 +216,7 @@ class GroupingPlusPool2d(torch.nn.Module):
         # If automorphisms are to be used, apply them before applying the grouping (if chosen to do so):
         
         # 4.-Compute reduction based on the chosen grouping:
-        output_tensor = self.grouping(output_tensor, self.weight, dim=-1)
+        output_tensor = self.grouping(output_tensor, square_weight, dim=-1)
 
         # 5.-Denormalize output values after applying grouping
         if self.denormalize:
