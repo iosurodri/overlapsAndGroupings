@@ -10,6 +10,7 @@ from src.data.save_results import log_eval_metrics
 from src.models.LeNetPlus import LeNetPlus
 from src.models.SupervisedNiNPlus import SupervisedNiNPlus
 from src.models.DenseNetPlus import DenseNetPlus
+from src.models.VGG import vgg16_bn
 
 # Model interaction:
 from src.model_tools.train import train
@@ -53,6 +54,8 @@ def parse_args():
         of custom learnable parameters are logged (using tensorboard) or not.""")
     CLI.add_argument("--log_grad_dist", nargs="?", type=bool, default=False, help="""Indicates whether the distribution of 
         gradients for convolutional layers are logged (using tensorboard) or not.""")
+    CLI.add_argument("--log_first_epoch", nargs="?", type=bool, default=False, help="""Indicates whether logs will be generated for all
+        batches of first iteration or not.""")
     CLI.add_argument("--config_file_name", nargs="?", type=str, default='default_parameters.json', help="config file to be used")
     return CLI.parse_args()
 
@@ -136,6 +139,8 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             model = SupervisedNiNPlus(pool_layer, in_channels=input_size[-1], num_classes=num_classes, input_size=input_size[:-1], initial_pool_exp=initial_pool_exp)
         elif model_type == 'dense':
             model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes)
+        elif model_type == 'vgg16':
+            model = vgg16_bn(pool_layer=pool_layer, num_classes=num_classes)
         else:
             raise Exception('Non implemented yet.')
         model.to(device)
@@ -158,8 +163,9 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
                 'Compatibility with the given optimizer has not been implemented yet')
 
         # Scheduler: On plateau
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=scheduler_factor, patience=5, threshold=0.0001, cooldown=0,
-                                                        min_lr=scheduler_min_lr)
+        # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=scheduler_factor, patience=5, threshold=0.0001, cooldown=0,
+        #                                                 min_lr=scheduler_min_lr)
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
         # Set the loss function:
         if model_type == 'nin':
