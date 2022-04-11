@@ -17,7 +17,7 @@ PATH_ROOT = os.path.join('..', '..', 'reports')
 
 def train(name, model, optimizer, criterion, train_loader, scheduler=None, train_proportion=1, batch_size=128,
           val_loader=None, num_epochs=20, using_tensorboard=True, save_checkpoints=False, log_param_dist=False, log_grad_dist=False,
-          log_first_epoch=True):
+          log_first_epoch=False):
     # 0. Prepare auxiliary functionality:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if using_tensorboard:
