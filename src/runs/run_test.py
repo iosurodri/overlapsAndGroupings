@@ -61,7 +61,7 @@ def parse_args():
 
 
 def full_test(model_type, name=None, config_file_name='default_parameters.json', dataset='CIFAR10', save_checkpoints=False, log_param_dist=False, 
-    log_grad_dist=False, pool_type='max', num_runs=5, initial_pool_exp=None):
+    log_grad_dist=False, log_first_epoch=False, pool_type='max', num_runs=5, initial_pool_exp=None):
 
     # If no name is specified for referring to the current experiment, we generate one based on the date and hour:
     if name is None:
@@ -175,7 +175,8 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
 
         model, train_loss, train_acc, val_loss, val_acc = train(name, model, optimizer, criterion, train_dataloader, scheduler=scheduler, train_proportion=train_proportion,
                                                                 batch_size=batch_size, val_loader=val_dataloader, num_epochs=num_epochs, using_tensorboard=True,
-                                                                save_checkpoints=save_checkpoints, log_param_dist=log_param_dist, log_grad_dist=log_grad_dist)
+                                                                save_checkpoints=save_checkpoints, log_param_dist=log_param_dist, log_grad_dist=log_grad_dist,
+                                                                log_first_epoch=log_first_epoch)
 
         # log_eval_results(name, val_acc, loss=val_loss)
         metrics = get_prediction_metrics(model, device, test_dataloader, verbose=False)
@@ -204,5 +205,6 @@ if __name__ == '__main__':
     save_checkpoints = args.save_checkpoints
     log_param_dist = args.log_param_dist
     log_grad_dist = args.log_grad_dist
+    log_first_epoch = args.log_first_epoch
     full_test(model_type, name=name, dataset=dataset, pool_type=pool_type, num_runs=num_runs, save_checkpoints=save_checkpoints, 
-        config_file_name=config_file_name, log_param_dist=log_param_dist, log_grad_dist=log_grad_dist, initial_pool_exp=initial_pool_exp)
+        config_file_name=config_file_name, log_param_dist=log_param_dist, log_grad_dist=log_grad_dist, log_first_epoch=log_first_epoch, initial_pool_exp=initial_pool_exp)
