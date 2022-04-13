@@ -16,6 +16,7 @@ class VGG(nn.Module):
         super().__init__()
         self.features = features
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
+        self.flatten = nn.Flatten()
         self.classifier = nn.Sequential(
             nn.Linear(512 * 7 * 7, 4096),
             nn.ReLU(True),
@@ -41,7 +42,7 @@ class VGG(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.features(x)
         x = self.avgpool(x)
-        x = torch.flatten(x, 1)
+        x = self.flatten(x) # x = torch.flatten(x, 1)
         x = self.classifier(x)
         return x
 
