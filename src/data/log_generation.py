@@ -55,3 +55,22 @@ def log_distributions(model, writer, iter_number, log_custom_param_dist=False, l
                     bias_grad = param.bias.grad.cpu().detach().numpy().squeeze()
                     writer.add_histogram('conv{}_bias_grad'.format(conv_idx), bias_grad, iter_number)
                 conv_idx += 1
+
+def log_activations(model, writer, sample_batch, iter_number):
+
+    wrapping_modules = [
+        nn.Sequential, nn.ModuleList, nn.ModuleDict
+    ]
+
+    output = sample_batch
+    writer.add_histogram('internal_activations', output.detach().cpu().numpy().squeeze(), iter_number)
+    i = 0
+    model_skipped = False
+    for module_name, module in model.named_modules():
+        if not model_skipped:
+            model_skipped = True
+        else:
+            if type(module) not in wrapping_modules:
+                output = module(output)
+                writer.add_histogram('internal_activations', output.detach().cpu().numpy().squeeze(), iter_number + i)
+                i += 1
