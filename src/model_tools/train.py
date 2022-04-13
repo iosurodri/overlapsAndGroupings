@@ -12,6 +12,10 @@ from src.visualization.visualize_distributions import visualize_heatmap, visuali
 from src.functions.loss_functions import SupervisedCrossEntropyLoss
 from src.layers.pooling_layers import GroupingPlusPool2d, GroupingCombPool2d
 
+
+# DEBUG:
+from src.data.log_generation import log_activations
+
 PATH_ROOT = os.path.join('..', '..', 'reports')
 
 
@@ -176,4 +180,8 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
             else:
                 scheduler.step()
             print(optimizer.param_groups[0]['lr'])
+        # DEBUG:
+        log_activations(model, writer, next(iter(val_loader))[0].to(device), 1)
+
+
     return model, train_loss, train_acc, val_loss, val_acc
