@@ -181,7 +181,7 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
                 scheduler.step()
             print(optimizer.param_groups[0]['lr'])
         # DEBUG:
-        log_activations(model, writer, next(iter(val_loader))[0].to(device), 1)
+        # log_activations(model, writer, next(iter(val_loader))[0].to(device), 1)
 
 
     return model, train_loss, train_acc, val_loss, val_acc
