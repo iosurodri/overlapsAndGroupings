@@ -180,7 +180,7 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
             else:
                 scheduler.step()
             print(optimizer.param_groups[0]['lr'])
-        # DEBUG:
+        # DEBUG: TODO: Remove
         # log_activations(model, writer, next(iter(val_loader))[0].to(device), 1)
 
 
