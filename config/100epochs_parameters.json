@@ -16,8 +16,8 @@
     },
     "CALTECH101": {
       "num_classes": 101,
-      "input_size": [32, 32, 3],
-      "num_training_samples": 50000,
+      "input_size": [224, 224, 3],
+      "num_training_samples": 8677,
       "train_proportion": 0.8,
       "num_workers": 2
     }
