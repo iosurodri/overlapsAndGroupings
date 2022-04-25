@@ -10,11 +10,10 @@ from functools import reduce
 
 PATH_DATA = os.path.join('..', '..', 'data', 'external')
 
+
 datasets_info = {
     'CIFAR10': {
         'dataset': datasets.CIFAR10,
-        'mean': (0.485, 0.456, 0.406),
-        'std': (0.229, 0.224, 0.225),
         'train_transform': transforms.Compose(
             [transforms.ToTensor(),
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
@@ -26,27 +25,28 @@ datasets_info = {
         ),
         'has_splits': True
     },
+    
     'CALTECH101': {
         'dataset': lambda root, transform=None, target_transform=None, download=False: datasets.Caltech101(
             root, transform=transform, target_type='category', target_transform=target_transform, download=download
         ),
-        # 'mean': (0.485, 0.456, 0.406),  # ToDo: Check that it is correct
-        # 'std': (0.229, 0.224, 0.225),
         'train_transform': transforms.Compose(
             [
             transforms.ToTensor(),
-            transforms.Resize((224, 224)),            
-            # transforms.Normalize((0.5), (0.5)),
-            # transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),            
-            transforms.RandomHorizontalFlip()]
+            transforms.Resize((224, 224)),
+            transforms.Lambda(lambda x: x.repeat(3, 1, 1) if x.size(0)==1 else x),  # Ensure all samples are in RGB format
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),            
+            transforms.RandomHorizontalFlip()
+            ]
         ),
         'test_transform': transforms.Compose(
             [transforms.ToTensor(),
             transforms.Resize((224, 224)),
+            transforms.Lambda(lambda x: x.repeat(3, 1, 1) if x.size(0)==1 else x),
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))]
         ),
         'has_splits': False
-    }
+    },
 }
 
 
@@ -153,29 +153,13 @@ def load_dataset(dataset_name, batch_size=32, val=True, train_proportion=0.8, nu
             train_idx, test_idx = indices[:split], indices[split:]
             train_loader = DataLoader(train_dataset, sampler=train_sampler, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory)
             test_loader = DataLoader(test_dataset, sampler=test_sampler, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory)
-    # DEBUG:
-    next((iter(train_loader)))
     if val:
         return train_loader, val_loader, test_loader
     else:
         return train_loader, test_loader
-
-
-        # # Split the train dataset into train and validation sets:
-        # # Get a random split with a proportion of train_proportion samples for the train subset and the remaining
-        # # ones for the validation subset:
-        # num_train = len(train_dataset)
-        # indices = list(range(num_train))
-        # split = int(np.floor(train_proportion * num_train))
-        # np.random.shuffle(indices)
-        # # Generate some SubsetRandomSampler with the indexes of the images corresponding to each subset:
-        # train_idx, val_idx = indices[:split], indices[split:]
-        # train_sampler = SubsetRandomSampler(train_idx)
-        # val_sampler = SubsetRandomSampler(val_idx)
-        
     
 
-
+# NOTE: DEPRECATED functionality
 def load_dataset_old(dataset_name, batch_size=32, train=True, train_proportion=0.8, val=True, num_workers=1, pin_memory=True):
 
     if dataset_name not in datasets_info.keys():
@@ -238,7 +222,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
 
-    load_dataset_debug('CALTECH101', batch_size=32, val=True, train_proportion=0.8, num_workers=0, pin_memory=True)
+    load_dataset('CALTECH101', batch_size=32, val=True, train_proportion=0.8, num_workers=0, pin_memory=True)
 
 
 
