@@ -309,6 +309,7 @@ class GroupingCompositionPool2d(torch.nn.Module):
 class GroupingCombPool2d(torch.nn.Module):
 
     available_groupings = {
+        'average': torch.mean,  # Not a grouping, but convenient for tests
         'product': aggr_funcs.product_grouping,
         'minimum': aggr_funcs.minimum_grouping,
         'maximum': lambda x, dim=-1: torch.max(x, dim=dim)[0],
@@ -651,7 +652,7 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
     defaultGrouping2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization='min_max', denormalize=True: GroupingPool2d(kernel_size, stride, padding, dilation, ceil_mode, grouping, normalization, denormalize)
     defaultGroupingPlus2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization='min_max', denormalize=True, initial_pool_exp=None: GroupingPlusPool2d(kernel_size, stride, padding, dilation, ceil_mode, grouping, normalization, denormalize, initial_pool_exp=initial_pool_exp)
     defaultGroupingComposition2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping_big=None, grouping_list=None, normalization='min_max', denormalize=True: GroupingCompositionPool2d(kernel_size, stride, padding, dilation, ceil_mode, grouping_big, grouping_list, normalization, denormalize)
-    defaultGroupingComb2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping_list=None, normalization='min_max', denormalize=True, learnable=False: GroupingCombPool2d(kernel_size, stride, padding, dilation, ceil_mode, grouping_list, normalization, denormalize, learnable)
+    defaultGroupingComb2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping_list=None, normalization='min_max', denormalize=True, learnable=True: GroupingCombPool2d(kernel_size, stride, padding, dilation, ceil_mode, grouping_list, normalization, denormalize, learnable)
     defaultUninorm2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, uninorm=None, normalization='min_max', denormalize=True: UninormPool2d(kernel_size, stride, padding, dilation, ceil_mode, uninorm, normalization, denormalize)
     defaultTnorm2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, tnorm=None, normalization='min_max', denormalize=True: TnormPool2d(kernel_size, stride, padding, dilation, ceil_mode, tnorm, normalization, denormalize)
     defaultTconorm2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, tconorm=None, normalization='min_max', denormalize=True: TconormPool2d(kernel_size, stride, padding, dilation, ceil_mode, tconorm, normalization, denormalize)
@@ -687,6 +688,11 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
         'grouping_comb_maxProdAndOB': lambda kernel_size, stride=None, padding=0, grouping_list=['maximum', 'product', 'ob']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
         'grouping_comb_maxAndGeometric': lambda kernel_size, stride=None, padding=0, grouping_list=['maximum', 'geometric']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
 
+        'grouping_comb_avgAndProd': lambda kernel_size, stride=None, padding=0, grouping_list=['average', 'product']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
+        'grouping_comb_avgAndOB': lambda kernel_size, stride=None, padding=0, grouping_list=['average', 'ob']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
+        'grouping_comb_avgAndGeometric': lambda kernel_size, stride=None, padding=0, grouping_list=['average', 'geometric']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
+        'grouping_comb_avgAndMax': lambda kernel_size, stride=None, padding=0, grouping_list=['average', 'maximum']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
+        
         ### OVERLAPS:
 
         'overlap_product': lambda kernel_size, stride=None, padding=0, overlap='product': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),# , normalization='quantile'),
