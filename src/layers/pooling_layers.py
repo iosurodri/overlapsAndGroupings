@@ -11,6 +11,7 @@ print(os.curdir)
 import src.functions.aggregation_functions as aggr_funcs
 import src.functions.aux_functions as aux_funcs
 
+
 class OverlapPool2d(torch.nn.Module):
 
     available_overlaps = {
@@ -132,11 +133,14 @@ class GroupingPool2d(torch.nn.Module):
     def forward(self, tensor):
         if isinstance(self.padding, list) or isinstance(self.padding, tuple):
             tensor = F.pad(tensor, self.padding)
+
         # 1.-Extract patches of kernel_size from tensor:
         tensor = tensor.unfold(2, self.kernel_size[0], self.stride[0]).unfold(3, self.kernel_size[1], self.stride[1])
         # 2.-Turn each one of those 2D patches into a 1D vector:
         tensor = tensor.reshape((tensor.shape[0], tensor.shape[1], tensor.shape[2], tensor.shape[3],
                                  self.kernel_size[0] * self.kernel_size[1]))
+
+                                 
         # 3.-ToDo: Normalize the input so that groupings defined in (0, 1) can be properly applied:
         output_tensor, normalization_params = self.normalization(tensor)
         # 4.-Compute reduction based on the chosen grouping:
@@ -643,7 +647,58 @@ class MDPool2d(torch.nn.Module):
         return output_tensor
 
 
+class ResidualPool2d(torch.nn.Module):
 
+    '''Implements residual connections into pooling layers:
+    res_pool(X) = pool(X) + res(X)
+    where pool is the pooling function to be performed and res the residual term
+    Options for res:
+        1) res(X) = x_1 + ... + x_n
+        2) res(X) = w_1 * x_1 + ... + w_n * x_1  TODO
+    '''
+
+    def __init__(self, pool_layer, kernel_size=2, stride=None, res_type='identity'):
+        super().__init__()
+        self.pool_layer = pool_layer
+        if type(kernel_size) == int:
+            kernel_size = (kernel_size, kernel_size)
+        self.kernel_size = kernel_size
+        if type(stride) == int:
+            stride = (stride, stride)
+        self.stride = stride if (stride is not None) else kernel_size
+        if res_type == 'identity':
+            self.coeff = torch.ones([1], dtype=torch.float)
+        elif res_type == 'same_convex':
+            self.coeff = torch.nn.Parameter(torch.zeros([1], dtype=torch.float))
+        elif res_type == 'diff_convex':
+            self.coeff = torch.nn.Parameter(torch.zeros([kernel_size[0] * kernel_size[1]], dtype=torch.float))
+        elif res_type == 'same':
+            self.coeff = torch.nn.Parameter(torch.ones([1], dtype=torch.float))
+        elif res_type == 'diff':
+            self.coeff = torch.nn.Parameter(torch.ones([kernel_size[0] * kernel_size[1]], dtype=torch.float))
+        self.res_type = res_type
+
+    def forward(self, tensor):
+        # 1) Apply pooling to tensor:
+        output = self.pool_layer(tensor)
+        # 2) Extract patches from tensor:
+        tensor = tensor.unfold(2, self.kernel_size[0], self.stride[0]).unfold(3, self.kernel_size[1], self.stride[1])
+        tensor = tensor.reshape((tensor.shape[0], tensor.shape[1], tensor.shape[2], tensor.shape[3],
+                                 self.kernel_size[0] * self.kernel_size[1]))
+        # 3) Add residual information:
+        if self.res_type == 'identity':
+            output = output + torch.sum(tensor, dim=-1)
+        elif self.res_type == 'mean':
+            output = output + torch.mean(tensor, dim=-1)  # Equivalent to "same" with self.coeff = 1/(kernel_size * kernel_size)
+        elif self.res_type == 'same_convex':
+            new_coeff = torch.softmax(torch.cat([self.coeff, -self.coeff], dim=0), dim=0)
+            output = new_coeff[0] * output + new_coeff[1] * output
+        elif self.res_type == 'diff_convex':
+            new_coeff = torch.softmax(torch.cat([self.coeff, -self.coeff], dim=1), dim=1)
+            output = new_coeff[0] * output + new_coeff[1] * output
+        elif self.res_type == 'same' or self.res_type == 'diff':
+            self.coeff = output + self.coeff * torch.sum(tensor, dim=-1)
+        return output
 
 
 def pickPoolLayer(pool_option, initial_pool_exp=None):
@@ -693,6 +748,18 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
         'grouping_comb_avgAndGeometric': lambda kernel_size, stride=None, padding=0, grouping_list=['average', 'geometric']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
         'grouping_comb_avgAndMax': lambda kernel_size, stride=None, padding=0, grouping_list=['average', 'maximum']: defaultGroupingComb2d(kernel_size, stride, padding, grouping_list=grouping_list),
         
+        ### RESIDUAL GROUPINGS:
+        'residual_group_geometric': lambda kernel_size, stride=None, padding=0, grouping='geometric': ResidualPool2d(kernel_size=kernel_size, stride=stride, pool_layer=defaultGrouping2d(kernel_size, stride, padding, grouping=grouping)),
+        'residual_group_plus_geometric': lambda kernel_size, stride=None, padding=0, grouping='geometric_power': ResidualPool2d(kernel_size=kernel_size, stride=stride, pool_layer=defaultGroupingPlus2d(kernel_size, stride, padding, grouping=grouping)),
+        'residual_group_comp_prod_maxAndProd': lambda kernel_size, stride=None, padding=0, grouping_big='product', grouping_list=['maximum', 'product']: ResidualPool2d(kernel_size=kernel_size, stride=stride, pool_layer=defaultGroupingComposition2d(kernel_size, stride, padding, grouping_big=grouping_big, grouping_list=grouping_list)),
+        # Testing different strategies for residual connection:
+        'residual_group_prod_identity': lambda kernel_size, stride=None, padding=0, grouping='product': ResidualPool2d(res_type='identity', kernel_size=kernel_size, stride=stride, pool_layer=defaultGrouping2d(kernel_size, stride, padding, grouping=grouping)),
+        'residual_group_prod_mean': lambda kernel_size, stride=None, padding=0, grouping='product': ResidualPool2d(res_type='mean', kernel_size=kernel_size, stride=stride, pool_layer=defaultGrouping2d(kernel_size, stride, padding, grouping=grouping)),
+        'residual_group_prod_same_convex': lambda kernel_size, stride=None, padding=0, grouping='product': ResidualPool2d(res_type='same_convex', kernel_size=kernel_size, stride=stride, pool_layer=defaultGrouping2d(kernel_size, stride, padding, grouping=grouping)),
+        'residual_group_prod_diff_convex': lambda kernel_size, stride=None, padding=0, grouping='product': ResidualPool2d(res_type='diff_convex', kernel_size=kernel_size, stride=stride, pool_layer=defaultGrouping2d(kernel_size, stride, padding, grouping=grouping)),
+        'residual_group_prod_same': lambda kernel_size, stride=None, padding=0, grouping='product': ResidualPool2d(res_type='same', kernel_size=kernel_size, stride=stride, pool_layer=defaultGrouping2d(kernel_size, stride, padding, grouping=grouping)),
+        'residual_group_prod_diff': lambda kernel_size, stride=None, padding=0, grouping='product': ResidualPool2d(res_type='diff', kernel_size=kernel_size, stride=stride, pool_layer=defaultGrouping2d(kernel_size, stride, padding, grouping=grouping)),
+
         ### OVERLAPS:
 
         'overlap_product': lambda kernel_size, stride=None, padding=0, overlap='product': defaultOverlap2d(kernel_size, stride, padding, overlap=overlap),# , normalization='quantile'),
