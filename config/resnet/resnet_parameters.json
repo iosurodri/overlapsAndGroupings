@@ -17,13 +17,13 @@
         "CALTECH101": {
             "num_classes": 101,
             "input_size": [224, 224, 3],
-      "num_training_samples": 8677,
+            "num_training_samples": 8677,
             "train_proportion": 0.8,
             "num_workers": 2
         }
     },
     "model_params": {
-        "learning_rate": 0.1,
+        "learning_rate": 0.01,
         "momentum": 0.9,
         "optimizer": "sgd",
         "weight_decay": 0.0001,
