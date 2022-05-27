@@ -110,9 +110,10 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
             
             # Useful for debugging early vanishing or exploding gradient problems:
             if log_first_epoch:
-                log_distributions(model, writer, iter_number=num_batches * epoch + (i + 1), 
-                        log_custom_param_dist=log_param_dist, log_conv_dist=log_param_dist, log_grad_dist=log_grad_dist, 
-                        custom_modules=[GroupingPlusPool2d, GroupingCombPool2d], custom_module_name='pool')
+                if i % 10 == 0:
+                    log_distributions(model, writer, iter_number=num_batches * epoch + (i + 1), 
+                            log_custom_param_dist=log_param_dist, log_conv_dist=log_param_dist, log_linear_dist=log_param_dist, log_grad_dist=log_grad_dist, 
+                            custom_modules=[GroupingPlusPool2d, GroupingCombPool2d], custom_module_name='pool')
 
             # If it's a logging iteration, generate log data:
             if i % iters_per_log == iters_per_log - 1:
@@ -130,7 +131,7 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
                     writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], num_batches * epoch + (i + 1))
                     # Log the distributions of the parameters of the model:
                     log_distributions(model, writer, iter_number=num_batches * epoch + (i + 1), 
-                        log_custom_param_dist=log_param_dist, log_conv_dist=log_param_dist, log_grad_dist=log_grad_dist, 
+                        log_custom_param_dist=log_param_dist, log_conv_dist=log_param_dist, log_linear_dist=log_param_dist, log_grad_dist=log_grad_dist, 
                         custom_modules=[GroupingPlusPool2d, GroupingCombPool2d], custom_module_name='pool')
 
         log_first_epoch = False  # Ensure that logging after each batch will only occur on first epoch
