@@ -19,7 +19,7 @@ from src.model_tools.evaluate import get_prediction_metrics
 from src.model_tools.save_model import save_model
 from src.model_tools.load_model import load_model
 
-from src.layers.pooling_layers import GroupingPlusPool2d, pickPoolLayer
+from src.layers.pooling_layers import GroupingPlusPool2d, GroupingCombPool2d, pickPoolLayer
 
 from src.functions.loss_functions import SupervisedCrossEntropyLoss
 
@@ -157,7 +157,7 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
         # 3. Optimization method:
         # Optimizer initialization (SGD: Stochastic Gradient Descent):
         # Get parameters (both standard and custom ones)
-        common_parameters, custom_parameters = get_param_groups(model, custom_module_types=[GroupingPlusPool2d])
+        common_parameters, custom_parameters = get_param_groups(model, custom_module_types=[GroupingPlusPool2d, GroupingCombPool2d])
 
         if optimizer_name == 'sgd':
             # We pass only the non frozen Parameters to the optimizer:
