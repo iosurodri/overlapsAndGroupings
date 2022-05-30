@@ -1,6 +1,6 @@
 {
   "train_params": {
-    "num_epochs": 5,
+    "num_epochs": 100,
     "batch_size": 128,
     "val": true,
     "number_logs": 1,
