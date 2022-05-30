@@ -128,7 +128,9 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
                     for tag, value in info.items():
                         writer.add_scalar(tag, value, num_batches * epoch + (i + 1))
                     # Log the value of the learning rate in this iteration:
-                    writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], num_batches * epoch + (i + 1))
+                    for optimizer_idx, param_group in enumerate(optimizer.param_groups):
+                        writer.add_scalar('learning_rate_{}'.format(str(optimizer_idx)), param_group['lr'], num_batches * epoch + (i + 1))
+#                    writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], num_batches * epoch + (i + 1))
                     # Log the distributions of the parameters of the model:
                     log_distributions(model, writer, iter_number=num_batches * epoch + (i + 1), 
                         log_custom_param_dist=log_param_dist, log_conv_dist=log_param_dist, log_linear_dist=log_param_dist, log_grad_dist=log_grad_dist, 
