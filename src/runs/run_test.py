@@ -1,6 +1,7 @@
 # PATH workings:
 import os
 import sys
+from xml.etree.ElementPath import get_parent_map
 sys.path.append(os.path.abspath(os.path.join('..', '..')))
 
 # Data loading and saving:
@@ -21,6 +22,8 @@ from src.model_tools.load_model import load_model
 from src.layers.pooling_layers import GroupingPlusPool2d, pickPoolLayer
 
 from src.functions.loss_functions import SupervisedCrossEntropyLoss
+
+from src.optim.optim import get_param_groups
 
 import json
 import argparse
@@ -153,67 +156,8 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
 
         # 3. Optimization method:
         # Optimizer initialization (SGD: Stochastic Gradient Descent):
-        trainable_parameters = model.parameters()
-
-        # TODO: Debug -> Per-parameter options -> Lower lr for parameters of GroupingPoolPlus2d layers
-
-        from itertools import chain
-
-        class GeneralParameters:
-            
-            general_module_types = [torch.nn.Conv2d, torch.nn.Linear]
-
-            def __init__(self, modules):
-                self.modules = modules
-
-            def __iter__(self):
-                return self
-
-            def __next__(self):
-                module = next(self.modules)
-                while (type(module) not in self.general_module_types) and (not hasattr(module, 'parameters')):
-                    module = next(self.modules)
-                return module.parameters()
-                
-        class CustomParameters:
-            
-            def __init__(self, modules, custom_module_types):
-                self.modules = modules
-                self.custom_module_types = custom_module_types
-
-            def __iter__(self):
-                return self
-
-            def __next__(self):
-                module = next(self.modules)
-                while (type(module) not in self.general_module_types) and (not hasattr(module, 'parameters')):
-                    module = next(self.modules)
-                return module.parameters()
-
-        modules = model.modules()
-        common_module_types = [torch.nn.Conv2d, torch.nn.Linear]
-        custom_module_types = [GroupingPlusPool2d]
-        common_parameters = []
-        custom_parameters = []
-        module = next(modules)
-        for module in modules:
-            if type(module) != torch.nn.Sequential:
-                if type(module) in common_module_types:
-                    if hasattr(module, 'parameters'):
-                        common_parameters.append(module.parameters)
-                elif type(module) in custom_module_types:
-                    if hasattr(module, 'parameters'):
-                        custom_parameters.append(module.parameters)
-        common_parameters = chain(common_parameters)
-        custom_parameters = chain(custom_parameters)
-
-        # print('GENERAL PARAMETERS')
-        # for general_parameter in common_parameters:
-        #     print(general_parameter)
-        # print('\r\n\r\nCUSTOM PARAMETERS')
-        # for custom_parameter in custom_parameters:
-        #     print(custom_parameter)
-
+        # Get parameters (both standard and custom ones)
+        common_parameters, custom_parameters = get_param_groups(model, custom_module_types=[GroupingPlusPool2d])
 
         if optimizer_name == 'sgd':
             # We pass only the non frozen Parameters to the optimizer:
@@ -221,15 +165,14 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             #                     momentum=momentum, weight_decay=weight_decay)
             # TODO: Debug -> Per-parameter options -> Lower lr for parameters of GroupingPoolPlus2d layers
             optimizer = optim.SGD([
-                {'common_parameters': common_parameters},
-                {'custom_parameters': custom_parameters, 'lr': 0.01}
+                {'params': common_parameters},
+                {'params': custom_parameters, 'lr': 0.01}
             ], lr=learning_rate, momentum=momentum, weight_decay=weight_decay)
-
         elif optimizer_name == 'adam':
-            # DEBUG: Testing much smaller values for learning rate when using Adam optimizer
-            # optimizer = optim.Adam(trainable_parameters, lr=learning_rate, weight_decay=weight_decay)
-            optimizer = optim.Adam(trainable_parameters,
-                                lr=learning_rate, weight_decay=weight_decay)
+            optimizer = optim.Adam([
+                {'params': common_parameters},
+                {'params': custom_parameters, 'lr': 0.01}
+            ], lr=learning_rate, weight_decay=weight_decay)
         else:
             raise Exception(
                 'Compatibility with the given optimizer has not been implemented yet')
