@@ -28,10 +28,23 @@ def log_distribution(writer, param, iter_number, param_type_name, parameter_idx,
                 writer.add_scalar('{}{}_bias_grad'.format(param_type_name, parameter_idx), parameter.item(), iter_number)
             else:
                 writer.add_histogram('{}{}_bias_grad'.format(param_type_name, parameter_idx), parameter, iter_number)
+    # SPECIFICALLY FOR BATCH_NORM:
+    if hasattr(param, 'running_mean') and param.running_mean is not None:
+        parameter = param.running_mean.cpu().detach().numpy().squeeze()
+        if parameter.size == 1:
+            writer.add_scalar('{}{}_running_mean'.format(param_type_name, parameter_idx), parameter.item(), iter_number)
+        else:
+            writer.add_histogram('{}{}_running_mean'.format(param_type_name, parameter_idx), parameter, iter_number)
+    if hasattr(param, 'running_var') and param.running_var is not None:
+        parameter = param.running_var.cpu().detach().numpy().squeeze()
+        if parameter.size == 1:
+            writer.add_scalar('{}{}_running_var'.format(param_type_name, parameter_idx), parameter.item(), iter_number)
+        else:
+            writer.add_histogram('{}{}_running_var'.format(param_type_name, parameter_idx), parameter, iter_number)
 
 
-def log_distributions(model, writer, iter_number, log_custom_param_dist=False, log_conv_dist=True, log_linear_dist=True, log_grad_dist=False,
-    custom_modules=None, custom_module_name='custom_module'):
+def log_distributions(model, writer, iter_number, log_custom_param_dist=False, log_conv_dist=True, log_linear_dist=True, log_bn_dist=True,
+    log_grad_dist=False, custom_modules=None, custom_module_name='custom_module'):
 
     # if custom_modules is None:
     #     custom_modules = [GroupingPlusPool2d, GroupingCombPool2d]
@@ -39,6 +52,7 @@ def log_distributions(model, writer, iter_number, log_custom_param_dist=False, l
     custom_module_idx = 0
     conv_idx = 0
     linear_idx = 0
+    batchnorm_idx = 0
     for param in model.modules():
         if log_custom_param_dist:
             if type(param) in custom_modules: 
@@ -52,6 +66,10 @@ def log_distributions(model, writer, iter_number, log_custom_param_dist=False, l
             if type(param) == nn.Linear:
                 log_distribution(writer, param, iter_number, 'linear', linear_idx, log_grad_dist)
                 linear_idx += 1
+        if log_bn_dist:
+            if type(param) == nn.BatchNorm2d:
+                log_distribution(writer, param, iter_number, 'batchnorm', batchnorm_idx, log_grad_dist)
+                batchnorm_idx += 1
 
    
 def log_activations(model, writer, sample_batch, iter_number):
