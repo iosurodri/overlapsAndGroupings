@@ -2,7 +2,7 @@ import torch.nn as nn
 
 def get_param_groups(model, custom_module_types, completeness_check=False):
     # TODO: Check for edge cases
-    modules = model.children()
+    modules = model.modules()
     common_modules = nn.ModuleList()
     custom_modules = nn.ModuleList()
     module = next(modules)
