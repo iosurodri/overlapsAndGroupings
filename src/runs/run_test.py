@@ -11,7 +11,7 @@ from src.data.save_results import log_eval_metrics
 from src.models.LeNetPlus import LeNetPlus
 from src.models.SupervisedNiNPlus import SupervisedNiNPlus
 from src.models.DenseNetPlus import DenseNetPlus
-from src.models.VGG import vgg16_bn, vgg16_bn_small
+from src.models.VGG import vgg16, vgg16_bn, vgg16_bn_small
 
 # Model interaction:
 from src.model_tools.train import train
@@ -19,7 +19,7 @@ from src.model_tools.evaluate import get_prediction_metrics
 from src.model_tools.save_model import save_model
 from src.model_tools.load_model import load_model
 
-from src.layers.pooling_layers import GroupingPlusPool2d, GroupingCombPool2d, pickPoolLayer
+from src.layers.pooling_layers import GroupingPlusPool2d, GroupingCombPool2d, ResidualPool2d, pickPoolLayer
 
 from src.functions.loss_functions import SupervisedCrossEntropyLoss
 
@@ -148,6 +148,7 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes)
         elif model_type == 'vgg16':
             model = vgg16_bn(pool_layer=pool_layer, num_classes=num_classes)
+            # model = vgg16(pool_layer=pool_layer, num_classes=num_classes)
         elif model_type == 'vgg16_small':
             model = vgg16_bn_small(pool_layer=pool_layer, num_classes=num_classes)
         else:
@@ -157,13 +158,14 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
         # 3. Optimization method:
         # Optimizer initialization (SGD: Stochastic Gradient Descent):
         # Get parameters (both standard and custom ones)
-        common_parameters, custom_parameters = get_param_groups(model, custom_module_types=[GroupingPlusPool2d, GroupingCombPool2d])
+        common_parameters, custom_parameters = get_param_groups(model, custom_module_types=[GroupingPlusPool2d, GroupingCombPool2d, ResidualPool2d], custom_capsule_module_types=[ResidualPool2d])
 
         if optimizer_name == 'sgd':
             # We pass only the non frozen Parameters to the optimizer:
             # optimizer = optim.SGD(trainable_parameters, lr=learning_rate,
             #                     momentum=momentum, weight_decay=weight_decay)
             # TODO: Debug -> Per-parameter options -> Lower lr for parameters of GroupingPoolPlus2d layers
+            # optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum, weight_decay=weight_decay)
             optimizer = optim.SGD([
                 {'params': common_parameters},
                 {'params': custom_parameters, 'lr': 0.01}
@@ -179,7 +181,7 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
 
         # Scheduler: On plateau
         # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=scheduler_factor, patience=5, threshold=0.0001, cooldown=0,
-        #                                                 min_lr=scheduler_min_lr)
+        #                                                  min_lr=scheduler_min_lr)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
         # Set the loss function:
