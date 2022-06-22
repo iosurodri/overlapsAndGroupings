@@ -667,15 +667,15 @@ class ResidualPool2d(torch.nn.Module):
             stride = (stride, stride)
         self.stride = stride if (stride is not None) else kernel_size
         if res_type == 'identity':
-            self.coeff = torch.ones([1], dtype=torch.float)
+            self.weight = torch.ones([1], dtype=torch.float)
         elif res_type == 'same_convex':
-            self.coeff = torch.nn.Parameter(torch.zeros([1], dtype=torch.float))
+            self.weight = torch.nn.Parameter(torch.zeros([1], dtype=torch.float))
         elif res_type == 'diff_convex':
-            self.coeff = torch.nn.Parameter(torch.zeros([kernel_size[0] * kernel_size[1]], dtype=torch.float))
+            self.weight = torch.nn.Parameter(torch.zeros([kernel_size[0] * kernel_size[1]], dtype=torch.float))
         elif res_type == 'same':
-            self.coeff = torch.nn.Parameter(torch.ones([1], dtype=torch.float))
+            self.weight = torch.nn.Parameter(torch.ones([1], dtype=torch.float))
         elif res_type == 'diff':
-            self.coeff = torch.nn.Parameter(torch.ones([kernel_size[0] * kernel_size[1]], dtype=torch.float))
+            self.weight = torch.nn.Parameter(torch.ones([kernel_size[0] * kernel_size[1]], dtype=torch.float))
         self.res_type = res_type
 
     def forward(self, tensor):
@@ -691,11 +691,16 @@ class ResidualPool2d(torch.nn.Module):
         elif self.res_type == 'mean':
             output = output + torch.mean(tensor, dim=-1)  # Equivalent to "same" with self.coeff = 1/(kernel_size * kernel_size)
         elif self.res_type == 'same_convex':
-            new_coeff = torch.softmax(torch.cat([self.coeff, -self.coeff], dim=0), dim=0)
-            output = new_coeff[0] * output + new_coeff[1] * output
+            # TODO: Fix get_params
+            # new_coeff = torch.softmax(torch.cat([self.coeff, -self.coeff], dim=0), dim=0)
+            # output = new_coeff[0] * output + new_coeff[1] * torch.sum(tensor, dim=-1)
+            # DANGER: torch.cat is not differentiable
+            new_coeff_alpha = torch.exp(self.weight) / (torch.exp(self.weight) + torch.exp(-self.weight))
+            new_coeff_beta = torch.exp(-self.weight) / (torch.exp(self.weight) + torch.exp(-self.weight))
+            output = new_coeff_alpha * output + new_coeff_beta * torch.sum(tensor, dim=-1)
         elif self.res_type == 'diff_convex':
             new_coeff = torch.softmax(torch.cat([self.coeff, -self.coeff], dim=1), dim=1)
-            output = new_coeff[0] * output + new_coeff[1] * output
+            output = new_coeff[0] * output + new_coeff[1] * torch.sum(tensor, dim=-1)
         elif self.res_type == 'same' or self.res_type == 'diff':
             self.coeff = output + self.coeff * torch.sum(tensor, dim=-1)
         return output
