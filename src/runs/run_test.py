@@ -203,6 +203,8 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             model = load_model(os.path.join(MODELS_PATH, name + '_checkpoint'), model_type=model_type, info_data=info_data).to(device)
             metrics_best = get_prediction_metrics(model, device=device, test_loader=test_dataloader, verbose=False)
             log_eval_metrics(name + '_best', metrics_best)
+        # May be necessary for other tasks:
+        return model, test_dataloader
 
 
 if __name__ == '__main__':
