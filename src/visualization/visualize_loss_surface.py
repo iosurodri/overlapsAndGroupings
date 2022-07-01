@@ -92,7 +92,6 @@ def get_params_and_directions(model, excluded_parameter_types=[nn.BatchNorm2d]):
                     directions1.append((new_direction1_weight / new_direction1_norm[:, None, None, None]) * filter_norm[:, None, None, None])  # new_direction1_norm[:, None, None, None] acts as a "broadcastable operation":
                     directions2.append((new_direction2_weight / new_direction1_norm[:, None, None, None]) * filter_norm[:, None, None, None])
             elif type(module) == torch.nn.Linear:
-                # TODO: Implement
                 weight = module.weight.clone().detach()
                 parameters.append(weight)
                 # Generate random directions for filters of the convolution layer:                    
@@ -137,10 +136,6 @@ def get_params_and_directions(model, excluded_parameter_types=[nn.BatchNorm2d]):
                         else:
                             new_direction1 = torch.randn(param.data.shape, device=param.data.device, dtype=param.data.dtype)
                             new_direction2 = torch.randn(param.data.shape, device=param.data.device, dtype=param.data.dtype)
-                            # while torch.abs(torch.cosine_similarity(new_direction1, new_direction2)) < 0.5:
-                                # Regenerate the second random direction (we want them to be different)
-                                # new_direction2 = torch.rand(param.data.shape, device=param.data.device, dtype=param.data.dtype)
-                            # TODO: Filterwise normalization:
                             if (type(module) == nn.Conv2d) and (param.dim() == 4):
                                 new_direction1 = (new_direction1 / torch.norm(new_direction1, dim=0, keepdim=True)) * torch.norm(param.data, dim=0, keepdim=True)
                                 new_direction2 = (new_direction2 / torch.norm(new_direction2, dim=0, keepdim=True)) * torch.norm(param.data, dim=0, keepdim=True)
@@ -199,41 +194,78 @@ def evaluate_loss_surface(model, parameters, directions1, directions2, test_load
     return np.array(loss_surface), np.array(acc_surface)
 
 
-def visualize_loss_surface(model, test_loader, name, criterion=torch.nn.CrossEntropyLoss(), excluded_parameter_types=[torch.nn.BatchNorm2d]):
+def visualize_loss_surface(model, test_loader, name, criterion=torch.nn.CrossEntropyLoss(), excluded_parameter_types=[torch.nn.BatchNorm2d],
+                           test_idx=0, plot_graphs=False, graph_3d=False):
 
-    alphas = np.arange(-1, 1, 0.1)
-    betas = np.arange(-1, 1, 0.1)
+    alphas = np.arange(-1, 1.01, 0.1)
+    betas = np.arange(-1, 1.01, 0.1)
 
     parameters, directions1, directions2 = get_params_and_directions(model, excluded_parameter_types)
     loss_surface_np, acc_surface_np = evaluate_loss_surface(model, parameters, directions1, directions2, test_loader, criterion, alphas=alphas, betas=betas)
     # Save loss_surface and acc_surface as csv files:
-    np.savetext(os.path.join(PATH_PLOTS, 'loss_surface_{}.csv'.format(name)), loss_surface_np, delimiter=",")
-    np.savetext(os.path.join(PATH_PLOTS, 'acc_surface_{}.csv'.format(name)), acc_surface_np, delimiter=",")
+    np.savetxt(os.path.join(PATH_PLOTS, '{}_test_{}_loss_surface.csv'.format(name, str(test_idx))), loss_surface_np, delimiter=",")
+    np.savetxt(os.path.join(PATH_PLOTS, '{}_test_{}_acc_surface.csv'.format(name, str(test_idx))), acc_surface_np, delimiter=",")
 
-    # Plot loss surface:
-    fig = plt.figure(figsize=(6,5))
-    left, bottom, width, height = 0.1, 0.1, 0.8, 0.8
-    ax = fig.add_axes([left, bottom, width, height]) 
+    if plot_graphs:
+        # Plot loss surface:
+        fig = plt.figure(figsize=(6,5))
+        left, bottom, width, height = 0.1, 0.1, 0.8, 0.8
+        ax = fig.add_axes([left, bottom, width, height]) 
 
-    cp = ax.contour(alphas, betas, loss_surface_np)
-    ax.clabel(cp, inline=True, fontsize=10)
-    ax.set_title('Contour Plot (Loss)')
-    ax.set_xlabel('\u03B1')
-    ax.set_ylabel('\u03B2')
-    plt.show()
-    fig.savefig(os.path.join(PATH_PLOTS, 'loss_surface_{}.pdf'.format(name)), bbox_inches="tight")
-    fig.savefig(os.path.join(PATH_PLOTS, 'loss_surface_{}.png'.format(name)), bbox_inches="tight")
+        cp = ax.contour(alphas, betas, loss_surface_np)
+        ax.clabel(cp, inline=True, fontsize=10)
+        ax.set_title('Contour Plot (Loss)')
+        ax.set_xlabel('\u03B1')
+        ax.set_ylabel('\u03B2')
+        plt.show()
+        fig.savefig(os.path.join(PATH_PLOTS, '{}_test_{}_loss_surface.pdf'.format(name, str(test_idx))), bbox_inches="tight")
+        fig.savefig(os.path.join(PATH_PLOTS, '{}_test_{}_loss_surface.png'.format(name, str(test_idx))), bbox_inches="tight")
 
-    # Plot accuracy surface:
-    fig = plt.figure(figsize=(6,5))
-    left, bottom, width, height = 0.1, 0.1, 0.8, 0.8
-    ax = fig.add_axes([left, bottom, width, height]) 
+        # Plot accuracy surface:
+        fig = plt.figure(figsize=(6,5))
+        left, bottom, width, height = 0.1, 0.1, 0.8, 0.8
+        ax = fig.add_axes([left, bottom, width, height]) 
 
-    cp = ax.contour(alphas, betas, acc_surface_np)
-    ax.clabel(cp, inline=True, fontsize=10)
-    ax.set_title('Contour Plot (Accuracy)')
-    ax.set_xlabel('\u03B1')
-    ax.set_ylabel('\u03B2')
-    plt.show()
-    fig.savefig(os.path.join(PATH_PLOTS, 'acc_surface_{}.pdf'.format(name)), bbox_inches="tight")
-    fig.savefig(os.path.join(PATH_PLOTS, 'acc_surface_{}.pdf'.format(name)), bbox_inches="tight")
+        cp = ax.contour(alphas, betas, acc_surface_np)
+        ax.clabel(cp, inline=True, fontsize=10)
+        ax.set_title('Contour Plot (Accuracy)')
+        ax.set_xlabel('\u03B1')
+        ax.set_ylabel('\u03B2')
+        plt.show()
+        fig.savefig(os.path.join(PATH_PLOTS, '{}_test_{}_acc_surface.pdf'.format(name, str(test_idx))), bbox_inches="tight")
+        fig.savefig(os.path.join(PATH_PLOTS, '{}_test_{}_acc_surface.png'.format(name, str(test_idx))), bbox_inches="tight")
+
+        if graph_3d:
+            # Plot loss surface:
+            fig = plt.figure(figsize=(6,5))
+            ax = fig.gca(projection='3d')
+            X, Y = np.meshgrid(alphas, betas)
+            surface = ax.plot_surface(X, Y, loss_surface_np, cmap=plt.cm.viridis)
+
+            ax.set_title('Loss surface')
+            ax.set_xlabel('\u03B1')
+            ax.set_ylabel('\u03B2')
+            ax.set_zlabel('Loss')
+
+            fig.colorbar(surface, shrink=0.5, aspect=5)
+
+            plt.show()
+            fig.savefig(os.path.join(PATH_PLOTS, '{}_test_{}_loss_surface_3d.pdf'.format(name, str(test_idx))), bbox_inches="tight")
+            fig.savefig(os.path.join(PATH_PLOTS, '{}_test_{}_loss_surface_3d.png'.format(name, str(test_idx))), bbox_inches="tight")
+
+            # Plot acc surface:
+            fig = plt.figure(figsize=(6,5))
+            ax = fig.gca(projection='3d')
+            X, Y = np.meshgrid(alphas, betas)
+            surface = ax.plot_surface(X, Y, acc_surface_np, cmap=plt.cm.viridis)
+
+            ax.set_title('Accuracy surface')
+            ax.set_xlabel('\u03B1')
+            ax.set_ylabel('\u03B2')
+            ax.set_zlabel('Accuracy')
+
+            fig.colorbar(surface, shrink=0.5, aspect=5)
+
+            plt.show()
+            fig.savefig(os.path.join(PATH_PLOTS, '{}_test_{}_acc_surface_3d.pdf'.format(name, str(test_idx))), bbox_inches="tight")
+            fig.savefig(os.path.join(PATH_PLOTS, '{}_test_{}_acc_surface_3d.png'.format(name, str(test_idx))), bbox_inches="tight")
