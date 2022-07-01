@@ -1,3 +1,4 @@
+from multiprocessing import pool
 import os
 import json
 import torch
@@ -5,6 +6,8 @@ from src.layers.pooling_layers import pickPoolLayer
 
 from src.models.LeNetPlus import LeNetPlus
 from src.models.SupervisedNiNPlus import SupervisedNiNPlus
+from src.models.VGG import vgg16_bn_small
+from src.models.DenseNetPlus import DenseNetPlus
 
 
 PATH_MODELS = os.path.join('..', '..', 'reports', 'models')
@@ -46,7 +49,15 @@ def load_model(file_name, model_type, info_file_name=None, info_data=None):
     elif model_type == 'nin':
         input_size = info_data['input_size']
         num_classes = info_data['num_classes']
-        model = SupervisedNiNPlus(pool_layer, in_channels=input_size[0], num_classes=num_classes, input_size=input_size[:-1])
+        model = SupervisedNiNPlus(pool_layer, in_channels=input_size[-1], num_classes=num_classes, input_size=input_size[:-1])
+    elif model_type == 'vgg16_small':
+        input_size = info_data['input_size']
+        num_classes = info_data['num_classes']
+        model = vgg16_bn_small(pool_layer=pool_layer, num_classes=num_classes)
+    elif model_type == 'dense':
+        input_size = info_data['input_size']
+        num_classes = info_data['num_classes']
+        model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes)
     else:
         raise Exception('{} model type unavailable.'.format(model_type))
     # Load the state_dict of the model into the newly created model (load the learnt parameters):
