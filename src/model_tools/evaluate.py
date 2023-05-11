@@ -1,6 +1,7 @@
 import torch
 import sklearn.metrics as metrics
 
+
 def evaluate(model, criterion, test_loader, verbose=False):
     # 0. Prepare auxiliary functionality:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -24,6 +25,19 @@ def evaluate(model, criterion, test_loader, verbose=False):
             print('Test - Accuracy: %.3f' % acc_test)
             print('Test - CrossEntropy: %.3f' % (running_loss_test / (i_test + 1)))
     return acc_test, running_loss_test / (i_test + 1)
+
+
+import numpy as np
+def get_probability_matrix(file_name, model, device, test_loader, num_classes=10):
+    model.eval()
+    probabilities = np.zeros([0, num_classes], dtype=np.float32)
+    with torch.no_grad():
+        for data, target in test_loader:
+            data, target = data.to(device), target.to(device)
+            output = model(data)
+            current_probs = torch.softmax(output, dim=1).cpu().numpy()
+            probabilities = np.append(probabilities, current_probs, axis=0)
+    np.savetxt(file_name + '_probabilities.csv', probabilities, delimiter=',')
 
 
 def test_label_predictions(model, device, test_loader):
