@@ -266,9 +266,9 @@ def uninorm_lukasiewicz(tensor, keepdim=False, dim=-1, threshold=0.5):
         torch.unsqueeze(out_tensor, dim=dim)
     return out_tensor
 
-#####################
-# UNINORM FUNCTIONS #
-#####################
+#######################
+# MODERATE DEVIATIONS #
+#######################
 
 def basic_moderate_deviation(tensor, keepdim=False, dim=-1, m=2):
     num_values = tensor.shape[dim]
