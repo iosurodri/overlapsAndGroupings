@@ -1,5 +1,4 @@
 import os
-from collections import Mapping
 
 PATH_ROOT = os.path.join('..', '..', 'reports')
 
@@ -23,8 +22,8 @@ def log_eval_results(name, acc, loss=None):
 
 def log_eval_metrics(name, metrics):
     # Start by checking if metrics is a dictionary of metrics and values:
-    if not isinstance(metrics, Mapping):
-        raise Exception('Metrics is expected to be a dictionary of the form "metric_name" -> "metric value"')
+    # if not isinstance(metrics, Mapping):
+    #     raise Exception('Metrics is expected to be a dictionary of the form "metric_name" -> "metric value"')
     results_folder = os.path.join(PATH_ROOT, 'results')
     try:
         os.mkdir(results_folder)
