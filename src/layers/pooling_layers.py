@@ -6,7 +6,6 @@ import torch
 import torch.nn.functional as F
 
 import os
-print(os.curdir)
 
 import src.functions.aggregation_functions as aggr_funcs
 import src.functions.aux_functions as aux_funcs
@@ -706,6 +705,84 @@ class ResidualPool2d(torch.nn.Module):
         return output
 
 
+class AttentionPool2d(torch.nn.Module):
+    
+    available_groupings = {
+        'product': aggr_funcs.product_grouping,
+        'minimum': aggr_funcs.minimum_grouping,
+        'maximum': lambda x, dim=-1: torch.max(x, dim=dim)[0],
+        'maximum_sqrt': lambda x: torch.pow(torch.max(x)[0] + 0.000001, 0.5),
+        'maximum_square': lambda x: torch.pow(torch.max(x)[0] + 0.000001, 2),
+        'ob': aggr_funcs.ob_grouping,
+        'geometric': aggr_funcs.geometric_grouping,
+        'u': aggr_funcs.u_grouping
+    }
+
+    available_normalizations = {
+        'min_max': {
+            'normalization': aux_funcs.min_max_normalization,
+            'denormalization': aux_funcs.min_max_denormalization
+        },
+        'quantile': {
+            'normalization': aux_funcs.quantile_normalization,
+            'denormalization': aux_funcs.min_max_denormalization
+        },
+        'sigmoid': {
+            'normalization': lambda x: (torch.sigmoid(x), None),
+            'denormalization': aux_funcs.sigmoid_denormalization
+        }
+    }
+
+    def __init__(self, kernel_size, in_channels, stride=None, padding=0, dilation=1, ceil_mode=False):  #, normalization=None, denormalize=True):
+        super().__init__()
+        if type(kernel_size) == int:
+            kernel_size = (kernel_size, kernel_size)
+        self.kernel_size = kernel_size
+        if type(stride) == int:
+            stride = (stride, stride)
+        self.stride = stride if (stride is not None) else kernel_size
+        self.padding = padding
+        self.dilation = dilation
+        self.ceil_mode = ceil_mode
+        
+        self.attention_conv = torch.nn.Conv2d(in_channels, 1, kernel_size=(1, 1), stride=1, padding=0)
+        
+        # if normalization not in self.available_normalizations.keys():
+        #     raise Exception('Normalization {} unavailable for GroupingPool2d. Must be one of {}'.format(
+        #         normalization, self.available_normalizations.keys()))
+        # self.normalization = self.available_normalizations[normalization]['normalization']
+        # self.denormalize = denormalize
+        # self.denormalization = self.available_normalizations[normalization]['denormalization']
+
+    def forward(self, tensor):
+        if isinstance(self.padding, list) or isinstance(self.padding, tuple):
+            tensor = F.pad(tensor, self.padding)
+
+        # Compute attention weights for all positions of the window:
+        attention_weights = self.attention_conv(tensor)
+        attention_weights = attention_weights.unfold(2, self.kernel_size[0], self.stride[0]).unfold(3, self.kernel_size[1], self.stride[1])
+        attention_weights = attention_weights.reshape((attention_weights.shape[0], attention_weights.shape[1], attention_weights.shape[2], attention_weights.shape[3],
+                                                       self.kernel_size[0] * self.kernel_size[1]))
+        
+        # 1.-Extract patches of kernel_size from tensor:
+        tensor = tensor.unfold(2, self.kernel_size[0], self.stride[0]).unfold(3, self.kernel_size[1], self.stride[1])
+        # 2.-Turn each one of those 2D patches into a 1D vector:
+        tensor = tensor.reshape((tensor.shape[0], tensor.shape[1], tensor.shape[2], tensor.shape[3],
+                                 self.kernel_size[0] * self.kernel_size[1]))
+
+                                 
+        # # 3.-ToDo: Normalize the input so that groupings defined in (0, 1) can be properly applied:
+        # output_tensor, normalization_params = self.normalization(tensor)
+        # 4.-Compute reduction based as a weighted mean (using attention weights):
+        output_tensor = (attention_weights * tensor).sum(dim=-1)
+
+        # 5.-Denormalize output values after applying grouping
+        # if self.denormalize:
+        #     output_tensor = self.denormalization(output_tensor, normalization_params)
+
+        return output_tensor
+
+
 def pickPoolLayer(pool_option, initial_pool_exp=None):
     
     defaultOverlap2d = lambda kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, overlap=None, normalization='min_max', denormalize=True: OverlapPool2d(kernel_size, stride, padding, dilation, ceil_mode, overlap, normalization, denormalize)
@@ -806,6 +883,12 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
         'moderate_deviation_1_5': lambda kernel_size, stride=None, padding=0, deviation='m1_5': defaultMD2d(kernel_size, stride, padding, deviation=deviation),
         'moderate_deviation_2_5': lambda kernel_size, stride=None, padding=0, deviation='m2_5': defaultMD2d(kernel_size, stride, padding, deviation=deviation),
         'moderate_deviation_3': lambda kernel_size, stride=None, padding=0, deviation='m3': defaultMD2d(kernel_size, stride, padding, deviation=deviation),
+        
+        
+        # DEBUG:
+        ### ATTENTION-POOLING:
+        'attention': AttentionPool2d,
+        
     }
 
     return available_options[pool_option]
