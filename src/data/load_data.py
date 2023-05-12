@@ -24,7 +24,30 @@ datasets_info = {
         ),
         'has_splits': True
     },
-    
+    'CIFAR100': {
+        'dataset': datasets.CIFAR100,
+        'train_transform': transforms.Compose(
+            [transforms.ToTensor(),
+             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))]
+        ),
+        'test_transform': transforms.Compose(
+            [transforms.ToTensor(),
+             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))]
+        ),
+        'has_splits': True
+    },
+    'MNIST': {
+        'dataset': datasets.MNIST,
+        'train_transform': transforms.Compose(
+            [transforms.ToTensor(),
+             transforms.Normalize((0.1307,), (0.3081,))]
+        ),
+        'test_transform': transforms.Compose(
+            [transforms.ToTensor(),
+             transforms.Normalize((0.1307,), (0.3081,))]
+        ),
+        'has_splits': True
+    },
     'CALTECH101': {
         'dataset': lambda root, transform=None, target_transform=None, download=False: datasets.Caltech101(
             root, transform=transform, target_type='category', target_transform=target_transform, download=download
