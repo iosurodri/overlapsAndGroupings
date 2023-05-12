@@ -20,7 +20,7 @@ PATH_ROOT = os.path.join('..', '..', 'reports')
 
 
 def train(name, model, optimizer, criterion, train_loader, scheduler=None, train_proportion=1, batch_size=128,
-          val_loader=None, num_epochs=20, using_tensorboard=True, save_checkpoints=False, log_param_dist=False, log_grad_dist=False,
+          val_loader=None, num_epochs=20, grad_clip=None, using_tensorboard=True, save_checkpoints=False, log_param_dist=False, log_grad_dist=False,
           log_first_epoch=False):
     # 0. Prepare auxiliary functionality:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -99,6 +99,11 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
             else:
                 loss = criterion(outputs, labels)
             loss.backward()
+            
+            # DEBUG:
+            if grad_clip: 
+                torch.nn.utils.clip_grad_value_(model.parameters(), grad_clip)
+            
             optimizer.step()
             running_loss += loss.item()  # Accumulate the loss for the logging step
             # Count the number of samples correctly predicted:
@@ -112,8 +117,8 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
             if log_first_epoch:
                 if i % 10 == 0:
                     log_distributions(model, writer, iter_number=num_batches * epoch + (i + 1), 
-                            log_custom_param_dist=log_param_dist, log_conv_dist=log_param_dist, log_linear_dist=log_param_dist, log_grad_dist=log_grad_dist, 
-                            custom_modules=[GroupingPlusPool2d, GroupingCombPool2d], custom_module_name='pool')
+                            log_custom_param_dist=log_param_dist, log_conv_dist=log_param_dist, log_linear_dist=log_param_dist, log_bn_dist=log_param_dist,
+                            log_grad_dist=log_grad_dist, custom_modules=[GroupingPlusPool2d, GroupingCombPool2d], custom_module_name='pool')
 
             # If it's a logging iteration, generate log data:
             if i % iters_per_log == iters_per_log - 1:
@@ -133,8 +138,8 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
 #                    writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], num_batches * epoch + (i + 1))
                     # Log the distributions of the parameters of the model:
                     log_distributions(model, writer, iter_number=num_batches * epoch + (i + 1), 
-                        log_custom_param_dist=log_param_dist, log_conv_dist=log_param_dist, log_linear_dist=log_param_dist, log_grad_dist=log_grad_dist, 
-                        custom_modules=[GroupingPlusPool2d, GroupingCombPool2d], custom_module_name='pool')
+                        log_custom_param_dist=log_param_dist, log_conv_dist=log_param_dist, log_linear_dist=log_param_dist, log_bn_dist=log_param_dist, 
+                        log_grad_dist=log_grad_dist, custom_modules=[GroupingPlusPool2d, GroupingCombPool2d], custom_module_name='pool')
 
         log_first_epoch = False  # Ensure that logging after each batch will only occur on first epoch
 
