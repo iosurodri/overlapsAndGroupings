@@ -1,7 +1,9 @@
-from multiprocessing import Pool, pool
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+import inspect
+
 
 ##########################
 ### AUXILIAR FUNCTIONS ###
@@ -164,10 +166,16 @@ class ResNetPool(nn.Module):
         self.bn1 = nn.BatchNorm2d(16)
         self.layer1 = self._make_layer(block, planes_configuration[0], num_blocks[0], bottleneck_option=bottleneck_option)
         # First downsampling:
-        self.pool1 = pool_layer(kernel_size=2, stride=2)
+        if 'in_channels' in inspect.signature(pool_layer).parameters.keys():
+            self.pool1 = pool_layer(kernel_size=2, stride=2, in_channels=planes_configuration[0])
+        else:
+            self.pool1 = pool_layer(kernel_size=2, stride=2)
         self.layer2 = self._make_layer(block, planes_configuration[1], num_blocks[1], bottleneck_option=bottleneck_option)
         # Second downsampling:
-        self.pool2 = pool_layer(kernel_size=2, stride=2)
+        if 'in_channels' in inspect.signature(pool_layer).parameters.keys():
+            self.pool2 = pool_layer(kernel_size=2, stride=2, in_channels=planes_configuration[1])
+        else:
+            self.pool2 = pool_layer(kernel_size=2, stride=2)
         self.layer3 = self._make_layer(block, planes_configuration[2], num_blocks[2], bottleneck_option=bottleneck_option)
         self.linear = nn.Linear(64, num_classes)
 
@@ -210,7 +218,7 @@ def pool_resnet20(pool_layer, planes_conf='double', bottleneck_option='pad_const
     return ResNetPool(PoolBlockSmall, [3, 3, 3], pool_layer=pool_layer, planes_conf=planes_conf, bottleneck_option=bottleneck_option)
 
 
-def get_resnet(model_type, bottleneck_option, planes_conf, pool_layer=None, size=20):
+def get_resnet(model_type, bottleneck_option='conv_bottleneck', planes_conf='double', pool_layer=None, num_classes=10, size=20):
 
     # available_models = {
     #     'small': {
@@ -233,7 +241,8 @@ def get_resnet(model_type, bottleneck_option, planes_conf, pool_layer=None, size
     if model_type == 'small':
         return ResNetSmall(BasicBlockSmall, available_sizes[size], bottleneck_option=bottleneck_option)
     elif model_type == 'pool':
-        return ResNetPool(PoolBlockSmall, available_sizes[size], planes_conf=planes_conf, bottleneck_option=bottleneck_option, pool_layer=pool_layer)
+        return ResNetPool(PoolBlockSmall, available_sizes[size], planes_conf=planes_conf, bottleneck_option=bottleneck_option, 
+                          pool_layer=pool_layer, num_classes=num_classes)
     else:
         raise Exception('Unavailable model_type {} provided'.format(model_type))
 
