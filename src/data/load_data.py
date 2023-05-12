@@ -15,8 +15,10 @@ datasets_info = {
     'CIFAR10': {
         'dataset': datasets.CIFAR10,
         'train_transform': transforms.Compose(
-            [transforms.ToTensor(),
-            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))]
+            [transforms.RandomCrop(32, padding=4),  # DEBUG: Adding data augmentation techniques (UNLIKE PREVIOUS TESTS)
+             transforms.RandomHorizontalFlip(),
+             transforms.ToTensor(),
+             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))]
         ),
         'test_transform': transforms.Compose(
             [transforms.ToTensor(),
@@ -27,7 +29,9 @@ datasets_info = {
     'CIFAR100': {
         'dataset': datasets.CIFAR100,
         'train_transform': transforms.Compose(
-            [transforms.ToTensor(),
+            [transforms.RandomCrop(32, padding=4),  # DEBUG: Adding data augmentation techniques (UNLIKE PREVIOUS TESTS)
+             transforms.RandomHorizontalFlip(),
+             transforms.ToTensor(),
              transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))]
         ),
         'test_transform': transforms.Compose(
