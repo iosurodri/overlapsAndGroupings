@@ -12,6 +12,7 @@ from src.models.LeNetPlus import LeNetPlus
 from src.models.SupervisedNiNPlus import SupervisedNiNPlus
 from src.models.DenseNetPlus import DenseNetPlus
 from src.models.VGG import vgg16, vgg16_bn, vgg16_bn_small
+from src.models.RESNetPlus import get_resnet
 
 # Model interaction:
 from src.model_tools.train import train
@@ -38,6 +39,13 @@ RESULTS_PATH = os.path.join('..', '..', 'reports', 'results')
 RUNS_PATH = os.path.join('..', '..', 'reports', 'runs')
 
 def parse_args():
+    
+    def boolean_string(s):
+        if s not in {'true', 'True', 'false', 'False'}:
+            raise ValueError('Not a valid boolean string')
+        out = s in {'true', 'True'}
+        return out
+    
     # Prepare argument parser:
     CLI = argparse.ArgumentParser()
     CLI.add_argument("model_type", nargs=1, type=str, help='Type of network to run. Options are: "lenet" for '
@@ -51,13 +59,13 @@ def parse_args():
     CLI.add_argument("--num_runs", nargs="?", type=int, default=5, help="Number of tests to be performed. Defaults to 5.")
     CLI.add_argument("--initial_pool_exp", nargs="?", type=float, default=None, help='''If pool_type requires it, sets the 
         initial value for the weight (exponent) ''')
-    CLI.add_argument("--save_checkpoints", nargs="?", type=bool, default=False, help="""Indicates whether we will save
+    CLI.add_argument("--save_checkpoints", nargs="?", type=boolean_string, default=False, help="""Indicates whether we will save
         the best version of the model obtained during training according to val loss, as well as the final model.""")
-    CLI.add_argument("--log_param_dist", nargs="?", type=bool, default=False, help="""Indicates whether the distribution
+    CLI.add_argument("--log_param_dist", nargs="?", type=boolean_string, default=False, help="""Indicates whether the distribution
         of custom learnable parameters are logged (using tensorboard) or not.""")
-    CLI.add_argument("--log_grad_dist", nargs="?", type=bool, default=False, help="""Indicates whether the distribution of 
+    CLI.add_argument("--log_grad_dist", nargs="?", type=boolean_string, default=False, help="""Indicates whether the distribution of 
         gradients for convolutional layers are logged (using tensorboard) or not.""")
-    CLI.add_argument("--log_first_epoch", nargs="?", type=bool, default=False, help="""Indicates whether logs will be generated for all
+    CLI.add_argument("--log_first_epoch", nargs="?", type=boolean_string, default=False, help="""Indicates whether logs will be generated for all
         batches of first iteration or not.""")
     CLI.add_argument("--config_file_name", nargs="?", type=str, default='default_parameters.json', help="config file to be used")
     return CLI.parse_args()
