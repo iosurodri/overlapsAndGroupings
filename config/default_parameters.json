@@ -1,6 +1,6 @@
 {
   "train_params": {
-    "num_epochs": 50,
+    "num_epochs": 100,
     "batch_size": 64,
     "val": true,
     "number_logs": 1,
@@ -11,6 +11,20 @@
       "num_classes": 10,
       "input_size": [32, 32, 3],
       "num_training_samples": 50000,
+      "train_proportion": 0.8,
+      "num_workers": 1
+    },
+    "CIFAR100": {
+      "num_classes": 100,
+      "input_size": [32, 32, 3],
+      "num_training_samples": 50000,
+      "train_proportion": 0.8,
+      "num_workers": 2
+    },
+    "MNIST": {
+      "num_classes": 10,
+      "input_size": [28, 28, 1],
+      "num_training_samples": 60000,
       "train_proportion": 0.8,
       "num_workers": 2
     },
@@ -58,6 +72,14 @@
     },
     "vgg16_small": {
       "learning_rate": 0.01,
+      "momentum": 0.9,
+      "optimizer": "sgd",
+      "weight_decay": 0.0001,
+      "scheduler_factor": 0.1,
+      "scheduler_min_lr": 0.0001
+    },
+    "resnet": {
+      "learning_rate": 0.1,
       "momentum": 0.9,
       "optimizer": "sgd",
       "weight_decay": 0.0001,
