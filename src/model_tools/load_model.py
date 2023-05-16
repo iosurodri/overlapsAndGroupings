@@ -8,6 +8,7 @@ from src.models.LeNetPlus import LeNetPlus
 from src.models.SupervisedNiNPlus import SupervisedNiNPlus
 from src.models.VGG import vgg16_bn_small
 from src.models.DenseNetPlus import DenseNetPlus
+from src.models.RESNetPlus import get_resnet
 
 
 PATH_MODELS = os.path.join('..', '..', 'reports', 'models')
@@ -58,6 +59,9 @@ def load_model(file_name, model_type, info_file_name=None, info_data=None):
         input_size = info_data['input_size']
         num_classes = info_data['num_classes']
         model = DenseNetPlus(pool_layer=pool_layer, in_channels=input_size[-1], num_classes=num_classes)
+    elif model_type == 'resnet':
+        num_classes = info_data['num_classes']
+        model = get_resnet(model_type='pool', pool_layer=pool_layer, num_classes=num_classes, size=56)
     else:
         raise Exception('{} model type unavailable.'.format(model_type))
     # Load the state_dict of the model into the newly created model (load the learnt parameters):
