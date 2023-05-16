@@ -20,6 +20,7 @@ def get_params_and_directions(model, excluded_parameter_types=[nn.BatchNorm2d]):
     """Extracts a copy of the parameters of a given model and generates two random (filter normalized) direction vectors in the feature space:
     If the features of a feature model are seen as a vector F in a dimensional space (defined by all the parameters of all layers of the model),
     two random vectors in the same dimensional space d1 and d2 are sampled from a gaussian distribution. 
+    
     Note: In order to avoid scale invariance issues, the parameters of d1 and d2 corresponding to convolutional or linear layers are normalized
     based on their corresponding filter norms. That is, roughly speaking: d1_i <- (d1_i / ||d1_i||) * ||F_i||
     More info (source): Visualizing the Loss Landscape of Neural Nets (https://arxiv.org/abs/1712.09913)
@@ -68,13 +69,13 @@ def get_params_and_directions(model, excluded_parameter_types=[nn.BatchNorm2d]):
                     # Reshape bias term to be compatible with weigh:
                     bias = bias.unsqueeze(1)
                     # Compute the norm of each filter (taking into account the weight values and the bias term):
-                    filter_norm = torch.norm(torch.concat([weight, bias], dim=1), dim=1)
+                    filter_norm = torch.norm(torch.cat([weight, bias], dim=1), dim=1)
                     # Reshape the random directions taking into account the term for the weight values and bias term and compute their norms:
-                    new_direction1 = torch.concat([
+                    new_direction1 = torch.cat([
                         torch.reshape(new_direction1_weight, weight.shape), new_direction1_bias.unsqueeze(1)
                     ], dim=1)
                     new_direction1_norm = torch.norm(new_direction1, dim=1)
-                    new_direction2 = torch.concat([
+                    new_direction2 = torch.cat([
                         torch.reshape(new_direction2_weight, weight.shape), new_direction2_bias.unsqueeze(1)
                     ], dim=1)
                     new_direction2_norm = torch.norm(new_direction2, dim=1)
@@ -107,11 +108,11 @@ def get_params_and_directions(model, excluded_parameter_types=[nn.BatchNorm2d]):
                     # Reshape bias term to be compatible with weigh:
                     bias = bias.unsqueeze(1)
                     # Compute the norm of each filter (taking into account the weight values and the bias term):
-                    filter_norm = torch.norm(torch.concat([weight, bias], dim=1), dim=1)
+                    filter_norm = torch.norm(torch.cat([weight, bias], dim=1), dim=1)
                     # Reshape the random directions taking into account the term for the weight values and bias term and compute their norms:
-                    new_direction1 = torch.concat([new_direction1_weight, new_direction1_bias.unsqueeze(1)], dim=1)
+                    new_direction1 = torch.cat([new_direction1_weight, new_direction1_bias.unsqueeze(1)], dim=1)
                     new_direction1_norm = torch.norm(new_direction1, dim=1)
-                    new_direction2 = torch.concat([new_direction2_weight, new_direction2_bias.unsqueeze(1)], dim=1)
+                    new_direction2 = torch.cat([new_direction2_weight, new_direction2_bias.unsqueeze(1)], dim=1)
                     new_direction2_norm = torch.norm(new_direction2, dim=1)
                     # Normalize all the random directions to have norm equal to the norm of the filter:
                     directions1.append((new_direction1_weight / new_direction1_norm[:, None]) * filter_norm[:, None])
