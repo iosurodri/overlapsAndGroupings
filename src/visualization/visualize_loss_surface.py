@@ -201,11 +201,15 @@ def visualize_loss_surface(model, test_loader, name, criterion=torch.nn.CrossEnt
     alphas = np.arange(-1, 1.01, 0.1)
     betas = np.arange(-1, 1.01, 0.1)
 
-    parameters, directions1, directions2 = get_params_and_directions(model, excluded_parameter_types)
-    loss_surface_np, acc_surface_np = evaluate_loss_surface(model, parameters, directions1, directions2, test_loader, criterion, alphas=alphas, betas=betas)
-    # Save loss_surface and acc_surface as csv files:
-    np.savetxt(os.path.join(PATH_PLOTS, '{}_test_{}_loss_surface.csv'.format(name, str(test_idx))), loss_surface_np, delimiter=",")
-    np.savetxt(os.path.join(PATH_PLOTS, '{}_test_{}_acc_surface.csv'.format(name, str(test_idx))), acc_surface_np, delimiter=",")
+    if model is not None:
+        parameters, directions1, directions2 = get_params_and_directions(model, excluded_parameter_types)
+        loss_surface_np, acc_surface_np = evaluate_loss_surface(model, parameters, directions1, directions2, test_loader, criterion, alphas=alphas, betas=betas)
+        # Save loss_surface and acc_surface as csv files:
+        np.savetxt(os.path.join(PATH_PLOTS, '{}_test_{}_loss_surface.csv'.format(name, str(test_idx))), loss_surface_np, delimiter=",")
+        np.savetxt(os.path.join(PATH_PLOTS, '{}_test_{}_acc_surface.csv'.format(name, str(test_idx))), acc_surface_np, delimiter=",")
+    else:
+        loss_surface_np = np.loadtxt(os.path.join(PATH_PLOTS, '{}_test_{}_loss_surface.csv'.format(name, str(test_idx))), delimiter=',')
+        acc_surface_np = np.loadtxt(os.path.join(PATH_PLOTS, '{}_test_{}_acc_surface.csv'.format(name, str(test_idx))), delimiter=',')
 
     if plot_graphs:
         # Plot loss surface:
@@ -237,6 +241,7 @@ def visualize_loss_surface(model, test_loader, name, criterion=torch.nn.CrossEnt
         fig.savefig(os.path.join(PATH_PLOTS, '{}_test_{}_acc_surface.png'.format(name, str(test_idx))), bbox_inches="tight")
 
         if graph_3d:
+            from mpl_toolkits.mplot3d import Axes3D
             # Plot loss surface:
             fig = plt.figure(figsize=(6,5))
             ax = fig.gca(projection='3d')
