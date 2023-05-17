@@ -14,6 +14,20 @@
       "train_proportion": 0.8,
       "num_workers": 1
     },
+    "CIFAR100": {
+      "num_classes": 100,
+      "input_size": [32, 32, 3],
+      "num_training_samples": 50000,
+      "train_proportion": 0.8,
+      "num_workers": 2
+    },
+    "MNIST": {
+      "num_classes": 10,
+      "input_size": [28, 28, 1],
+      "num_training_samples": 60000,
+      "train_proportion": 0.8,
+      "num_workers": 2
+    },
     "CALTECH101": {
       "num_classes": 101,
       "input_size": [224, 224, 3],
