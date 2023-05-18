@@ -243,46 +243,59 @@ def load_dataset_old(dataset_name, batch_size=32, train=True, train_proportion=0
         return test_loader
 
 
+def preload_datasets():
+    for dataset_info in datasets_info.values():
+        if dataset_info['has_splits']:
+            train_dataset = dataset_info['dataset'](
+                root=PATH_DATA, train=True, download=True, transform=dataset_info['train_transform']
+            )   
+        else:
+            train_dataset = dataset_info['dataset'](
+                root=PATH_DATA, download=False, transform=dataset_info['train_transform']
+            )
+
 if __name__ == '__main__':
 
-    import matplotlib.pyplot as plt
+    preload_datasets()
+
+    # import matplotlib.pyplot as plt
 
 
-    load_dataset('CALTECH101', batch_size=32, val=True, train_proportion=0.8, num_workers=0, pin_memory=True)
+    # load_dataset('CALTECH101', batch_size=32, val=True, train_proportion=0.8, num_workers=0, pin_memory=True)
 
 
 
-    dataset_name = 'CIFAR10'
-    transform = transforms.Compose(
-        [transforms.ToTensor(),
-         transforms.Normalize(datasets_info[dataset_name]['mean'], datasets_info[dataset_name]['std'])]
-    )
-    # 2.-Prepare the datasets:
-    train_dataset = datasets_info[dataset_name]['dataset'](
-        root=os.path.join('..', '..', 'data', 'external'), train=True,
-        download=True, transform=transform,
-    )
+    # dataset_name = 'CIFAR10'
+    # transform = transforms.Compose(
+    #     [transforms.ToTensor(),
+    #      transforms.Normalize(datasets_info[dataset_name]['mean'], datasets_info[dataset_name]['std'])]
+    # )
+    # # 2.-Prepare the datasets:
+    # train_dataset = datasets_info[dataset_name]['dataset'](
+    #     root=os.path.join('..', '..', 'data', 'external'), train=True,
+    #     download=True, transform=transform,
+    # )
 
-    sample = train_dataset[np.random.randint(len(train_dataset))][0]
-    sample_shape = sample.shape
+    # sample = train_dataset[np.random.randint(len(train_dataset))][0]
+    # sample_shape = sample.shape
 
-    plt.imshow(sample.permute(1, 2, 0).numpy())
-    plt.show()
+    # plt.imshow(sample.permute(1, 2, 0).numpy())
+    # plt.show()
 
-    k = 2
+    # k = 2
 
-    sample_unfolded = sample.unfold(1, k, k).unfold(2, k, k)
-    sample_unfolded = sample_unfolded.reshape(sample_unfolded.shape[0], sample_unfolded.shape[1] * sample_unfolded.shape[2],
-                                              sample_unfolded.shape[3] * sample_unfolded.shape[4])
+    # sample_unfolded = sample.unfold(1, k, k).unfold(2, k, k)
+    # sample_unfolded = sample_unfolded.reshape(sample_unfolded.shape[0], sample_unfolded.shape[1] * sample_unfolded.shape[2],
+    #                                           sample_unfolded.shape[3] * sample_unfolded.shape[4])
 
-    U, eigenvalues, eigenvectors = torch.pca_lowrank(sample_unfolded, center=True)
+    # U, eigenvalues, eigenvectors = torch.pca_lowrank(sample_unfolded, center=True)
 
-    sample_projected = torch.matmul(sample_unfolded, eigenvectors[..., :1])
-    sample_projected = sample_projected.reshape(sample_shape[0], int(sample_shape[1] / k), int(sample_shape[2] / k))  # ToDo: GENERALIZAR
+    # sample_projected = torch.matmul(sample_unfolded, eigenvectors[..., :1])
+    # sample_projected = sample_projected.reshape(sample_shape[0], int(sample_shape[1] / k), int(sample_shape[2] / k))  # ToDo: GENERALIZAR
 
 
-    plt.imshow(sample_projected.permute(1, 2, 0).numpy())
-    plt.show()
+    # plt.imshow(sample_projected.permute(1, 2, 0).numpy())
+    # plt.show()
 
 
     # train_loader, val_loader = load_dataset('CIFAR10', batch_size=32, train=True, val=True, num_workers=1,
