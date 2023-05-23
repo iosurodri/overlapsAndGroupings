@@ -107,7 +107,7 @@ class GroupingPool2d(torch.nn.Module):
         }
     }
 
-    def __init__(self, kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization=None, denormalize=True):
+    def __init__(self, kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization=None, denormalize=True, clip_grad=1):
         super().__init__()
         if type(kernel_size) == int:
             kernel_size = (kernel_size, kernel_size)
@@ -128,6 +128,10 @@ class GroupingPool2d(torch.nn.Module):
         self.normalization = self.available_normalizations[normalization]['normalization']
         self.denormalize = denormalize
         self.denormalization = self.available_normalizations[normalization]['denormalization']
+        
+        # DEBUG: Testing gradient clipping using backward hooks:
+        if clip_grad is not None:
+            self.clip_grad = clip_grad
 
     def forward(self, tensor):
         if isinstance(self.padding, list) or isinstance(self.padding, tuple):
@@ -139,9 +143,22 @@ class GroupingPool2d(torch.nn.Module):
         tensor = tensor.reshape((tensor.shape[0], tensor.shape[1], tensor.shape[2], tensor.shape[3],
                                  self.kernel_size[0] * self.kernel_size[1]))
 
-                                 
+        # # DEBUG: Testing gradient clipping using backward hooks:
+        if self.clip_grad and self.training and tensor.requires_grad:
+        #     tensor.register_hook(lambda grad: print(grad))
+            # tensor.register_hook(lambda grad: print(grad.mean()))
+            tensor.register_hook(lambda grad: torch.clamp(grad, min=-torch.quantile(grad, 0.001), max=torch.quantile(grad, 0.001)))
+            # tensor.register_hook(lambda grad: torch.clamp(grad, min=-.001, max=.001))
+            # tensor.register_hook(lambda grad: print(grad.mean()))
+        #     tensor.register_hook(lambda grad: print(grad))
+        
         # 3.-ToDo: Normalize the input so that groupings defined in (0, 1) can be properly applied:
         output_tensor, normalization_params = self.normalization(tensor)
+        
+        # DEBUG: Testing gradient clipping using backward hooks:
+        # if self.clip_grad and self.training and output_tensor.requires_grad:
+        #     output_tensor.register_hook(lambda grad: torch.clamp(grad, min=-1, max=1))
+        
         # 4.-Compute reduction based on the chosen grouping:
         output_tensor = self.grouping(output_tensor, dim=-1)
 
