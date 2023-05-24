@@ -79,6 +79,38 @@ class OverlapPool2d(torch.nn.Module):
         return output_tensor
 
 
+
+
+# DEBUG: Testing gradient clamping through backward hooks:
+
+class FunctionClampLayer(torch.nn.Module):
+
+    def __init__(self, function, clip_grad=1):
+        super().__init__()
+        self.function = function
+        self.clip_grad = clip_grad
+        
+    def forward(self, tensor, dim=-1):
+        output_tensor = self.function(tensor, dim=dim)
+        return output_tensor
+
+def clamp_hook(module, grad_input, grad_output):
+    new_grad_input = []
+    for i, grad_input_i in enumerate(grad_input):
+        # if torch.any(grad_output[i] == 0):
+        #     raise Exception('Gradient of output is 0')
+        grad_local_i = grad_input_i / grad_output[i].unsqueeze(-1)  # dL/dx_i = dL/dy * dy/dx_i -> dy/dx_i = dL/dx_i / dL/dy
+        if module.clip_grad is not None:
+            grad_local_i = torch.clamp(grad_local_i, max=module.clip_grad)  # Clip local gradient dy/dx_i
+            new_grad_input_i = grad_output[i].unsqueeze(-1) * grad_local_i  # dL/dx_i = dL/dy * min(dy/dx_i, clip_grad)
+        else:
+            new_grad_input_i = grad_input_i
+        # Careful: If dL/dx_i == 0 -> dL/dx_i = 0 -> dy/dx_i is undetermined (nan) -> We set clamp(dL/dx_i = 0)
+        new_grad_input_i[torch.isnan(new_grad_input_i)] = 0
+        new_grad_input.append(new_grad_input_i)
+    return new_grad_input
+    
+    
 class GroupingPool2d(torch.nn.Module):
 
     available_groupings = {
@@ -107,7 +139,7 @@ class GroupingPool2d(torch.nn.Module):
         }
     }
 
-    def __init__(self, kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization=None, denormalize=True, clip_grad=1):
+    def __init__(self, kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, grouping=None, normalization=None, denormalize=True, clip_grad=None):
         super().__init__()
         if type(kernel_size) == int:
             kernel_size = (kernel_size, kernel_size)
@@ -121,7 +153,12 @@ class GroupingPool2d(torch.nn.Module):
         if grouping not in self.available_groupings.keys():
             raise Exception('Grouping {} unavailable for GroupingPool2d. Must be one of {}'.format(
                 grouping, self.available_groupings.keys()))
-        self.grouping = self.available_groupings[grouping]
+            
+        # DEBUG: Testing gradient clamping through backward hooks:
+        self.grouping = FunctionClampLayer(self.available_groupings[grouping], clip_grad=clip_grad)
+        if clip_grad is not None:
+            self.grouping.register_full_backward_hook(clamp_hook)
+        
         if normalization not in self.available_normalizations.keys():
             raise Exception('Normalization {} unavailable for GroupingPool2d. Must be one of {}'.format(
                 normalization, self.available_normalizations.keys()))
@@ -129,9 +166,6 @@ class GroupingPool2d(torch.nn.Module):
         self.denormalize = denormalize
         self.denormalization = self.available_normalizations[normalization]['denormalization']
         
-        # DEBUG: Testing gradient clipping using backward hooks:
-        if clip_grad is not None:
-            self.clip_grad = clip_grad
 
     def forward(self, tensor):
         if isinstance(self.padding, list) or isinstance(self.padding, tuple):
@@ -142,22 +176,9 @@ class GroupingPool2d(torch.nn.Module):
         # 2.-Turn each one of those 2D patches into a 1D vector:
         tensor = tensor.reshape((tensor.shape[0], tensor.shape[1], tensor.shape[2], tensor.shape[3],
                                  self.kernel_size[0] * self.kernel_size[1]))
-
-        # # DEBUG: Testing gradient clipping using backward hooks:
-        if self.clip_grad and self.training and tensor.requires_grad:
-        #     tensor.register_hook(lambda grad: print(grad))
-            # tensor.register_hook(lambda grad: print(grad.mean()))
-            tensor.register_hook(lambda grad: torch.clamp(grad, min=-torch.quantile(grad, 0.001), max=torch.quantile(grad, 0.001)))
-            # tensor.register_hook(lambda grad: torch.clamp(grad, min=-.001, max=.001))
-            # tensor.register_hook(lambda grad: print(grad.mean()))
-        #     tensor.register_hook(lambda grad: print(grad))
         
         # 3.-ToDo: Normalize the input so that groupings defined in (0, 1) can be properly applied:
         output_tensor, normalization_params = self.normalization(tensor)
-        
-        # DEBUG: Testing gradient clipping using backward hooks:
-        # if self.clip_grad and self.training and output_tensor.requires_grad:
-        #     output_tensor.register_hook(lambda grad: torch.clamp(grad, min=-1, max=1))
         
         # 4.-Compute reduction based on the chosen grouping:
         output_tensor = self.grouping(output_tensor, dim=-1)
