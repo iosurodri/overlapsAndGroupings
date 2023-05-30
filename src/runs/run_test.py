@@ -68,11 +68,12 @@ def parse_args():
     CLI.add_argument("--log_first_epoch", nargs="?", type=boolean_string, default=False, help="""Indicates whether logs will be generated for all
         batches of first iteration or not.""")
     CLI.add_argument("--config_file_name", nargs="?", type=str, default='default_parameters.json', help="config file to be used")
+    CLI.add_argument("--clip_grad", nargs="?", type=float, default=None, help="Value to be used for gradient clipping. If None, no clipping is performed.")
     return CLI.parse_args()
 
 
 def full_test(model_type, name=None, config_file_name='default_parameters.json', dataset='CIFAR10', save_checkpoints=False, log_param_dist=False, 
-    log_grad_dist=False, log_first_epoch=False, pool_type='max', num_runs=5, initial_pool_exp=None):
+    log_grad_dist=False, log_first_epoch=False, pool_type='max', num_runs=5, initial_pool_exp=None, clip_grad=None):
 
     # If no name is specified for referring to the current experiment, we generate one based on the date and hour:
     if name is None:
@@ -197,7 +198,7 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
         model, train_loss, train_acc, val_loss, val_acc = train(name, model, optimizer, criterion, train_dataloader, scheduler=scheduler, train_proportion=train_proportion,
                                                                 batch_size=batch_size, val_loader=val_dataloader, num_epochs=num_epochs, using_tensorboard=True,
                                                                 save_checkpoints=save_checkpoints, log_param_dist=log_param_dist, log_grad_dist=log_grad_dist,
-                                                                log_first_epoch=log_first_epoch)
+                                                                log_first_epoch=log_first_epoch, clip_grad=clip_grad)
 
         # log_eval_results(name, val_acc, loss=val_loss)
         metrics = get_prediction_metrics(model, device, test_dataloader, verbose=False)
@@ -229,5 +230,7 @@ if __name__ == '__main__':
     log_param_dist = args.log_param_dist
     log_grad_dist = args.log_grad_dist
     log_first_epoch = args.log_first_epoch
+    clip_grad = args.clip_grad
     full_test(model_type, name=name, dataset=dataset, pool_type=pool_type, num_runs=num_runs, save_checkpoints=save_checkpoints, 
-        config_file_name=config_file_name, log_param_dist=log_param_dist, log_grad_dist=log_grad_dist, log_first_epoch=log_first_epoch, initial_pool_exp=initial_pool_exp)
+        config_file_name=config_file_name, log_param_dist=log_param_dist, log_grad_dist=log_grad_dist, log_first_epoch=log_first_epoch, 
+        initial_pool_exp=initial_pool_exp, clip_grad=clip_grad)

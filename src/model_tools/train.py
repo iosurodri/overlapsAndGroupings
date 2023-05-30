@@ -20,8 +20,8 @@ PATH_ROOT = os.path.join('..', '..', 'reports')
 
 
 def train(name, model, optimizer, criterion, train_loader, scheduler=None, train_proportion=1, batch_size=128,
-          val_loader=None, num_epochs=20, grad_clip=None, using_tensorboard=True, save_checkpoints=False, log_param_dist=False, log_grad_dist=False,
-          log_first_epoch=False):
+          val_loader=None, num_epochs=20, grad_clip=None, using_tensorboard=True, save_checkpoints=False, clip_grad=None,
+          log_param_dist=False, log_grad_dist=False, log_first_epoch=False):
     # 0. Prepare auxiliary functionality:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if using_tensorboard:
@@ -101,8 +101,8 @@ def train(name, model, optimizer, criterion, train_loader, scheduler=None, train
             loss.backward()
             
             # DEBUG:
-            if grad_clip: 
-                torch.nn.utils.clip_grad_value_(model.parameters(), grad_clip)
+            if clip_grad: 
+                torch.nn.utils.clip_grad_value_(model.parameters(), clip_grad)
             
             optimizer.step()
             running_loss += loss.item()  # Accumulate the loss for the logging step
