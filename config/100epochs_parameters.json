@@ -55,7 +55,7 @@
       "scheduler_min_lr": 0.0001
     },
     "dense": {
-      "learning_rate": 0.1,
+      "learning_rate": 0.01,
       "momentum": 0.9,
       "optimizer": "sgd",
       "weight_decay": 0.0001,
@@ -71,7 +71,7 @@
       "scheduler_min_lr": 0.0001
     },
     "vgg16_small": {
-      "learning_rate": 0.1,
+      "learning_rate": 0.01,
       "momentum": 0.9,
       "optimizer": "sgd",
       "weight_decay": 0.0001,
@@ -88,4 +88,3 @@
     }
   }
 }
-  
