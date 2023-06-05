@@ -78,9 +78,8 @@ class VGG(nn.Module):
         return x
 
 
-def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False, pool_layer: nn.Module = None) -> nn.Sequential:
+def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False, pool_layer: nn.Module = None, in_channels=3) -> nn.Sequential:
     layers: List[nn.Module] = []
-    in_channels = 3
     for v in cfg:
         if v == "M":
             if pool_layer is None:
@@ -106,11 +105,11 @@ cfgs: Dict[str, List[Union[str, int]]] = {
 }
 
 
-def _vgg(cfg: str, batch_norm: bool, pool_layer: nn.Module = None, small=False, **kwargs: Any) -> VGG:
+def _vgg(cfg: str, batch_norm: bool, pool_layer: nn.Module = None, small=False, in_channels=3, **kwargs: Any) -> VGG:
     if small:
-        model = VGG_small(make_layers(cfgs[cfg], batch_norm=batch_norm, pool_layer=pool_layer), **kwargs)
+        model = VGG_small(make_layers(cfgs[cfg], batch_norm=batch_norm, pool_layer=pool_layer, in_channels=in_channels), **kwargs)
     else:
-        model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm, pool_layer=pool_layer), **kwargs)
+        model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm, pool_layer=pool_layer, in_channels=in_channels), **kwargs)
     return model
 
 

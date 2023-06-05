@@ -153,9 +153,9 @@ def full_test(model_type, name=None, config_file_name='default_parameters.json',
             model = vgg16_bn(pool_layer=pool_layer, num_classes=num_classes)
             # model = vgg16(pool_layer=pool_layer, num_classes=num_classes)
         elif model_type == 'vgg16_small':
-            model = vgg16_bn_small(pool_layer=pool_layer, num_classes=num_classes)
+            model = vgg16_bn_small(pool_layer=pool_layer, num_classes=num_classes, in_channels=input_size[-1])
         elif model_type == 'resnet':
-            model = get_resnet(model_type='pool', pool_layer=pool_layer, num_classes=num_classes, size=56)
+            model = get_resnet(model_type='pool', pool_layer=pool_layer, num_classes=num_classes, size=56, in_channels=input_size[-1])
         else:
             raise Exception('Non implemented yet.')
         model.to(device)

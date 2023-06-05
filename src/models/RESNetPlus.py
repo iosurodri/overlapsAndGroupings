@@ -64,11 +64,11 @@ class BasicBlockSmall(nn.Module):
         return out
 
 class ResNetSmall(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10, bottleneck_option='pad_constant'):
+    def __init__(self, block, num_blocks, num_classes=10, bottleneck_option='pad_constant', in_channels=3):
         super().__init__()
         self.in_planes = 16
 
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(in_channels, 16, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
         self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1, bottleneck_option=bottleneck_option)
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2, bottleneck_option=bottleneck_option)
@@ -151,7 +151,7 @@ class ResNetPool(nn.Module):
         'constant_32': [32, 32, 32]
     } 
 
-    def __init__(self, block, num_blocks, num_classes=10, planes_conf='double', pool_layer=nn.MaxPool2d, bottleneck_option='pad_constant'):
+    def __init__(self, block, num_blocks, num_classes=10, planes_conf='double', pool_layer=nn.MaxPool2d, bottleneck_option='pad_constant', in_channels=3):
 
         super().__init__()
         
@@ -162,7 +162,7 @@ class ResNetPool(nn.Module):
         self.in_planes = 16
 
 
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(in_channels, 16, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
         self.layer1 = self._make_layer(block, planes_configuration[0], num_blocks[0], bottleneck_option=bottleneck_option)
         # First downsampling:
@@ -218,7 +218,7 @@ def pool_resnet20(pool_layer, planes_conf='double', bottleneck_option='pad_const
     return ResNetPool(PoolBlockSmall, [3, 3, 3], pool_layer=pool_layer, planes_conf=planes_conf, bottleneck_option=bottleneck_option)
 
 
-def get_resnet(model_type, bottleneck_option='conv_bottleneck', planes_conf='double', pool_layer=None, num_classes=10, size=20):
+def get_resnet(model_type, bottleneck_option='conv_bottleneck', planes_conf='double', pool_layer=None, num_classes=10, size=20, in_channels=3):
 
     # available_models = {
     #     'small': {
@@ -239,10 +239,10 @@ def get_resnet(model_type, bottleneck_option='conv_bottleneck', planes_conf='dou
     }
 
     if model_type == 'small':
-        return ResNetSmall(BasicBlockSmall, available_sizes[size], bottleneck_option=bottleneck_option)
+        return ResNetSmall(BasicBlockSmall, available_sizes[size], bottleneck_option=bottleneck_option, in_channels=in_channels)
     elif model_type == 'pool':
         return ResNetPool(PoolBlockSmall, available_sizes[size], planes_conf=planes_conf, bottleneck_option=bottleneck_option, 
-                          pool_layer=pool_layer, num_classes=num_classes)
+                          pool_layer=pool_layer, num_classes=num_classes, in_channels=in_channels)
     else:
         raise Exception('Unavailable model_type {} provided'.format(model_type))
 
