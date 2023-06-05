@@ -45,12 +45,12 @@ datasets_info = {
         'train_transform': transforms.Compose(
             [transforms.ToTensor(),
              transforms.Normalize((0.1307,), (0.3081,)),
-             transforms.Resize((32, 32), antialias=True)]
+             transforms.Resize((32, 32))]
         ),
         'test_transform': transforms.Compose(
             [transforms.ToTensor(),
              transforms.Normalize((0.1307,), (0.3081,)),
-             transforms.Resize((32, 32), antialias=True)]
+             transforms.Resize((32, 32))]
         ),
         'has_splits': True
     },
