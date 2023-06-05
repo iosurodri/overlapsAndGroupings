@@ -23,7 +23,7 @@
     },
     "MNIST": {
       "num_classes": 10,
-      "input_size": [28, 28, 1],
+      "input_size": [32, 32, 1],
       "num_training_samples": 60000,
       "train_proportion": 0.8,
       "num_workers": 2
