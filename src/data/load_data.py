@@ -43,14 +43,14 @@ datasets_info = {
     'MNIST': {
         'dataset': datasets.MNIST,
         'train_transform': transforms.Compose(
-            [transforms.ToTensor(),
-             transforms.Normalize((0.1307,), (0.3081,)),
-             transforms.Resize((32, 32))]
+            [transforms.Resize((32, 32)),
+             transforms.ToTensor(),
+             transforms.Normalize((0.1307,), (0.3081,))]
         ),
         'test_transform': transforms.Compose(
-            [transforms.ToTensor(),
+            [transforms.Resize((32, 32)),
              transforms.Normalize((0.1307,), (0.3081,)),
-             transforms.Resize((32, 32))]
+             transforms.ToTensor()]
         ),
         'has_splits': True
     },
