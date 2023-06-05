@@ -49,8 +49,8 @@ datasets_info = {
         ),
         'test_transform': transforms.Compose(
             [transforms.Resize((32, 32)),
-             transforms.Normalize((0.1307,), (0.3081,)),
-             transforms.ToTensor()]
+             transforms.ToTensor(),
+             transforms.Normalize((0.1307,), (0.3081,))]
         ),
         'has_splits': True
     },
