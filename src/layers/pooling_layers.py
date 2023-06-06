@@ -816,6 +816,49 @@ class AttentionPool2d(torch.nn.Module):
         #     output_tensor = self.denormalization(output_tensor, normalization_params)
 
         return output_tensor
+    
+    
+class MixedPool2d(torch.nn.Module):
+
+    def __init__(self, kernel_size, in_channels=None, stride=None, padding=0, dilation=1, ceil_mode=False):  #, normalization=None, denormalize=True):
+        super().__init__()
+        if type(kernel_size) == int:
+            kernel_size = (kernel_size, kernel_size)
+        self.kernel_size = kernel_size
+        if type(stride) == int:
+            stride = (stride, stride)
+        self.stride = stride if (stride is not None) else kernel_size
+        self.padding = padding
+        self.dilation = dilation
+        self.ceil_mode = ceil_mode
+        if in_channels is None:
+            self.alpha = torch.nn.Parameter(torch.zeros(1))
+        else:
+            self.alpha = torch.nn.Parameter(torch.zeros(1, in_channels, 1, 1))
+        
+    def forward(self, tensor):
+        if isinstance(self.padding, list) or isinstance(self.padding, tuple):
+            tensor = F.pad(tensor, self.padding)
+        
+        # 1.-Extract patches of kernel_size from tensor:
+        tensor = tensor.unfold(2, self.kernel_size[0], self.stride[0]).unfold(3, self.kernel_size[1], self.stride[1])
+        # 2.-Turn each one of those 2D patches into a 1D vector:
+        tensor = tensor.reshape((tensor.shape[0], tensor.shape[1], tensor.shape[2], tensor.shape[3],
+                                 self.kernel_size[0] * self.kernel_size[1]))
+
+                                 
+        # 3.-Compute both reduction methods:        
+        mean_tensor = torch.mean(tensor, dim=-1)
+        max_tensor = torch.max(tensor, dim=-1)[0]
+        
+        alpha_normalized = torch.sigmoid(self.alpha)
+        output_tensor = alpha_normalized * mean_tensor + (1 - alpha_normalized) * max_tensor
+
+        # 5.-Denormalize output values after applying grouping
+        # if self.denormalize:
+        #     output_tensor = self.denormalization(output_tensor, normalization_params)
+
+        return output_tensor
 
 
 def pickPoolLayer(pool_option, initial_pool_exp=None):
@@ -923,6 +966,8 @@ def pickPoolLayer(pool_option, initial_pool_exp=None):
         # DEBUG:
         ### ATTENTION-POOLING:
         'attention': AttentionPool2d,
+        
+        'mixed': MixedPool2d,
         
     }
 
