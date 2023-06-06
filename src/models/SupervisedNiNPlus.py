@@ -1,4 +1,5 @@
 import torch.nn as nn
+import inspect
 
 # Debug:
 import torch
@@ -85,6 +86,8 @@ class SupervisedNiNPlus(nn.Module):
         # Empirical tests show that the initial value of the parameter p of GroupingPlusPool2d layers is irrelevant
         # elif pool_layer == pool_layers.GroupingPlusPool2d:
         #     self.block_1_pool = pool_layer(kernel_size=3, stride=2, padding=block_1_pool_pad, initial_pool_exp=initial_pool_exp)
+        elif 'in_channels' in inspect.signature(pool_layer).parameters.keys():
+            self.block_1_pool = pool_layer(kernel_size=3, stride=2, padding=block_1_pool_pad, in_channels=self.network_params['mlpconv_neurons'][0])
         else:
             self.block_1_pool = pool_layer(kernel_size=3, stride=2, padding=block_1_pool_pad)
 
@@ -116,6 +119,8 @@ class SupervisedNiNPlus(nn.Module):
         # Empirical tests show that the initial value of the parameter p of GroupingPlusPool2d layers is irrelevant
         # elif pool_layer == pool_layers.GroupingPlusPool2d:
         #     self.block_2_pool = pool_layer(kernel_size=3, stride=2, padding=block_2_pool_pad, initial_pool_exp=initial_pool_exp)
+        elif 'in_channels' in inspect.signature(pool_layer).parameters.keys():
+            self.block_2_pool = pool_layer(kernel_size=3, stride=2, padding=block_1_pool_pad, in_channels=self.network_params['mlpconv_neurons'][1])
         else:
             self.block_2_pool = pool_layer(kernel_size=3, stride=2, padding=block_2_pool_pad)
         self.block_2_dropout = nn.Dropout2d(p=0.5, inplace=True)

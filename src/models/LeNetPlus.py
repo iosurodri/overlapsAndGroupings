@@ -1,5 +1,5 @@
 import torch.nn as nn
-
+import inspect
 
 class LeNetPlus(nn.Module):
 
@@ -13,13 +13,19 @@ class LeNetPlus(nn.Module):
         # Layer "group" 0:
         self.conv_0 = nn.Conv2d(in_channels=input_size[2], out_channels=num_filters[0],
                                    kernel_size=(3, 3), padding=(1, 1), bias=False)
-        self.pool_0 = pool_layer(kernel_size=(2, 2), stride=(2, 2))
+        if 'in_channels' in inspect.signature(pool_layer).parameters.keys():
+            self.pool_0 = pool_layer(kernel_size=(2, 2), stride=(2, 2), in_channels=num_filters[0])
+        else:
+            self.pool_0 = pool_layer(kernel_size=(2, 2), stride=(2, 2))
         if use_batch_norm:
             self.batch_norm_0 = nn.BatchNorm2d(num_filters[0])
         # Layer group 1:
         self.conv_1 = nn.Conv2d(num_filters[0], out_channels=num_filters[1],
                                 kernel_size=(3, 3), padding=(1, 1), bias=True)
-        self.pool_1 = pool_layer(kernel_size=(2, 2), stride=(2, 2))
+        if 'in_channels' in inspect.signature(pool_layer).parameters.keys():
+            self.pool_1 = pool_layer(kernel_size=(2, 2), stride=(2, 2), in_channels=num_filters[1])
+        else:
+            self.pool_1 = pool_layer(kernel_size=(2, 2), stride=(2, 2))
         if use_batch_norm:
             self.batch_norm_1 = nn.BatchNorm2d(num_filters[1])
         # MLP Classifier:
