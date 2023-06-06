@@ -784,23 +784,20 @@ class AttentionPool2d(torch.nn.Module):
         self.ceil_mode = ceil_mode
         
         self.attention_conv = torch.nn.Conv2d(in_channels, 1, kernel_size=(1, 1), stride=1, padding=0)
-        
-        # if normalization not in self.available_normalizations.keys():
-        #     raise Exception('Normalization {} unavailable for GroupingPool2d. Must be one of {}'.format(
-        #         normalization, self.available_normalizations.keys()))
-        # self.normalization = self.available_normalizations[normalization]['normalization']
-        # self.denormalize = denormalize
-        # self.denormalization = self.available_normalizations[normalization]['denormalization']
 
     def forward(self, tensor):
         if isinstance(self.padding, list) or isinstance(self.padding, tuple):
             tensor = F.pad(tensor, self.padding)
 
         # Compute attention weights for all positions of the window:
-        attention_weights = self.attention_conv(tensor)
+        # 1.-Apply 1x1 convolution (affine transformation) to input tensor:
+        attention_weights = F.relu(self.attention_conv(tensor))
+        # 2.-Unfold weight matrix to the shape of the extracted patches:
         attention_weights = attention_weights.unfold(2, self.kernel_size[0], self.stride[0]).unfold(3, self.kernel_size[1], self.stride[1])
         attention_weights = attention_weights.reshape((attention_weights.shape[0], attention_weights.shape[1], attention_weights.shape[2], attention_weights.shape[3],
                                                        self.kernel_size[0] * self.kernel_size[1]))
+        # 3.-Normalize each patch of weights so that they sum up to 1:
+        attention_weights = torch.softmax(attention_weights, dim=-1)
         
         # 1.-Extract patches of kernel_size from tensor:
         tensor = tensor.unfold(2, self.kernel_size[0], self.stride[0]).unfold(3, self.kernel_size[1], self.stride[1])
