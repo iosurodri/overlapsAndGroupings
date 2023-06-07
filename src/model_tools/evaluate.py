@@ -54,6 +54,20 @@ def test_label_predictions(model, device, test_loader):
     return [i.item() for i in actuals], [i.item() for i in predictions]
 
 
+def accuracy_top5_score(model, device, test_loader):
+    model.eval()
+    correct = 0.0
+    total = 0.0
+    with torch.no_grad():
+        for data, target in test_loader:
+            data, target = data.to(device), target.to(device)
+            outputs_test = model(data)
+            # _, predicted = torch.max(outputs_test.data, 1)
+            predicted_top5 = torch.argsort(outputs_test, dim=1, descending=True)[:, :5]
+            total += target.size(0)
+            correct += torch.sum((predicted_top5 == target.view(-1, 1))).item()  # DEBUG
+    return correct / total
+
 def get_prediction_metrics(model, device, test_loader, verbose=False):
     actuals, predictions = test_label_predictions(model, device, test_loader)
     confusion_matrix = metrics.confusion_matrix(actuals, predictions)
@@ -63,15 +77,18 @@ def get_prediction_metrics(model, device, test_loader, verbose=False):
     recall = metrics.recall_score(actuals, predictions, average=None)
     f1_score = metrics.f1_score(actuals, predictions, average=None)
     accuracy = metrics.accuracy_score(actuals, predictions)
+    top5_accuracy = accuracy_top5_score(model, device, test_loader)
     if verbose:
         print('Accuracy: {}'.format(accuracy))
         print('Precision: {}'.format(precision))
         print('Recall: {}'.format(recall))
         print('F1-score: {}'.format(f1_score))
+        print('Accuracy top5: {}'.format(top5_accuracy))
     prediction_metrics = {
         'accuracy': accuracy,
+        'accuracy_top5': top5_accuracy,
         'precision': precision,
         'recall': recall,
-        'f1_score': f1_score
+        'f1_score': f1_score,        
     }
     return prediction_metrics
