@@ -12,16 +12,12 @@ def parse_args():
     # Prepare argument parser:
     CLI = argparse.ArgumentParser()
     CLI.add_argument("experiment_folder", nargs=1, type=str, help='Name of the folder which contains the given tests')
-    CLI.add_argument("--metric", nargs=1, default="all", choices=['accuracy', 'precision', 'recall', 'f1_score', 'all'])
+    CLI.add_argument("--metric", nargs='*', default="all", choices=['accuracy', 'accuracy_top5', 'precision', 'recall', 'f1_score', 'all'])
     return CLI.parse_args()
 
 
 def summarize_experiments(parent_folder, metric='all'):
 
-    if metric == 'all':
-        metrics = ['accuracy', 'precision', 'recall', 'f1_score']
-    else:
-        metrics = [metric]
     df_metrics = {}
 
     for metric in metrics:
@@ -46,6 +42,15 @@ def summarize_experiments(parent_folder, metric='all'):
                             metric_val = float(re.findall("\d+\.\d+", first_line)[0])
                             results_tests[experiment_folder][test_folder] = metric_val
                         # The remaining metrics are given in format one-vs-all (as many values as classes)
+                        elif metric == 'accuracy_top5':
+                            line = test_file.readline()
+                            # Find start of metric description:
+                            while not line.startswith(metric):
+                                line = test_file.readline()
+                            # Read the lind of interest:
+                            result_strings = re.findall("\d+\.\d+", line)
+                            metric_val = float(result_strings[0])
+                            results_tests[experiment_folder][test_folder] = metric_val
                         else:
                             metric_by_class = []
                             line = test_file.readline()
@@ -87,7 +92,9 @@ if __name__ == '__main__':
         sys.argv = [sys.argv[0], *sys.argv[1].split()]
     args = parse_args()
     experiment_folder = args.experiment_folder
-    metric = args.metric
+    metrics = args.metric
+    if metrics[0] == 'all':
+        metrics = ['accuracy', 'accuracy_top5', 'precision', 'recall', 'f1_score']
     print('Starting data dumping process')
-    summarize_experiments(experiment_folder[0], metric[0])
+    summarize_experiments(experiment_folder[0], metrics)
     print('Excel file successfully written')
